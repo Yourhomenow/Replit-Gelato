@@ -1,15 +1,14 @@
-# [Project name]
+# Gelato Store
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A branch-aware gelato shop prototype that lets staff and managers manage menu availability, place orders, track preparation, and record payment.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/db run push` — push DB schema changes (development only)
+- Required environment: `DATABASE_URL`, `SESSION_SECRET`
 
 ## Stack
 
@@ -18,27 +17,37 @@ _Replace the heading above with the project's name, and this line with one sente
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — API contract and generated client source
+- `lib/db/src/schema/gelato.ts` — PostgreSQL schema
+- `artifacts/api-server/src/routes/` — authentication, menu, stock, orders, and dashboard endpoints
+- `artifacts/gelato-store/src/` — web app
+- `database/README.md` — inventory deduction decision
+- `database/seed.sql` — sample branches, menu items, and stock lots
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Users receive a session only after OTP verification; development mode also returns the prototype code for the demo.
+- Managers may view across branches; staff are restricted to their assigned branch.
+- Order creation atomically reserves menu availability and consumes the oldest matching stock lots.
+- Each order can have one recorded payment; the database enforces one payment per order.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Staff can search the menu, customize and place an order, advance preparation status, and record a QR, card, or transfer payment. Managers can maintain recipes and prices, inspect branch stock, and register stock lots. Reports, alerts, purchase orders, members, and promotions are deferred.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the prototype focused on the current slice; prioritize working behavior over polish.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Apply schema updates with `pnpm --filter @workspace/db run push` in development.
+- `database/seed.sql` is safe to re-run and provides two branches plus sample menu and stock data.
+- Prototype OTP codes appear in development API server logs and in the development response; production responses omit the code.
 
 ## Pointers
 

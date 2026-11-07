@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Gelato Store"
+description = "A branch-aware gelato shop management prototype for staff and managers, centered on completing an order from menu selection through preparation and payment."
+version = "1.0.0"
+id = "artifacts/gelato-store"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25008
+
+[services.development]
+run = "pnpm --filter @workspace/gelato-store run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gelato-store", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/gelato-store/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25008"
+BASE_PATH = "/"

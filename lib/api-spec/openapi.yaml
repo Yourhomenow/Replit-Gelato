@@ -3,20 +3,24 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Gelato store operations for staff and managers
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: branches
+  - name: menu
+  - name: stock
+  - name: orders
+  - name: dashboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,434 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /branches:
+    get:
+      operationId: listBranches
+      tags: [branches]
+      summary: List branches for registration
+      responses:
+        "200":
+          description: Branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Branch"
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register and request an OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: OTP challenge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthChallenge"
+        "400":
+          description: Invalid registration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Phone number already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Sign in and request an OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OTP challenge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthChallenge"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/verify-otp:
+    post:
+      operationId: verifyOtp
+      tags: [auth]
+      summary: Verify OTP and begin a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOtpInput"
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Return the signed-in user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: End the current session
+      responses:
+        "204":
+          description: Signed out
+  /menu:
+    get:
+      operationId: listMenu
+      tags: [menu]
+      summary: Search menu items and branch availability
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+        "401":
+          description: Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createMenuItem
+      tags: [menu]
+      summary: Create a menu item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenuItemInput"
+      responses:
+        "201":
+          description: Created menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "403":
+          description: Manager access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /menu/{id}:
+    patch:
+      operationId: updateMenuItem
+      tags: [menu]
+      summary: Update a menu item recipe or price
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MenuItemUpdate"
+      responses:
+        "200":
+          description: Updated menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "403":
+          description: Manager access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Menu item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /menu/{id}/availability:
+    patch:
+      operationId: updateMenuAvailability
+      tags: [menu]
+      summary: Adjust remaining menu availability
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityInput"
+      responses:
+        "200":
+          description: Updated availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "404":
+          description: Menu item or branch not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /stock:
+    get:
+      operationId: listStockLots
+      tags: [stock]
+      summary: Search stock lots
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Stock lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockLot"
+    post:
+      operationId: createStockLot
+      tags: [stock]
+      summary: Register a stock lot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockLotInput"
+      responses:
+        "201":
+          description: Created stock lot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockLot"
+        "403":
+          description: Not allowed for this branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List recent orders
+      parameters:
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create an order and reserve stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Invalid order or insufficient stock or availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Advance order preparation status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusInput"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /orders/{id}/payment:
+    post:
+      operationId: recordPayment
+      tags: [orders]
+      summary: Record one payment for an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Invalid amount
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Order already paid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get current branch order summary
+      parameters:
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
 components:
   schemas:
     HealthStatus:
@@ -31,6 +463,372 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required: [id, name]
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+      required: [id, fullName, phone, role, branchId, branchName]
+    RegisterInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          minLength: 8
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+      required: [fullName, phone, password, role, branchId]
+    LoginInput:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required: [phone, password]
+    AuthChallenge:
+      type: object
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+        deliveryHint:
+          type: string
+        demoCode:
+          type: ["string", "null"]
+      required: [challengeId, expiresAt, deliveryHint, demoCode]
+    VerifyOtpInput:
+      type: object
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+      required: [challengeId, code]
+    IngredientRequirement:
+      type: object
+      properties:
+        ingredientName:
+          type: string
+        quantityPerServing:
+          type: number
+          exclusiveMinimum: 0
+        unit:
+          type: string
+      required: [ingredientName, quantityPerServing, unit]
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        priceCents:
+          type: integer
+        recipe:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngredientRequirement"
+        storageGuidelines:
+          type: string
+        isActive:
+          type: boolean
+        availability:
+          type: integer
+        branchId:
+          type: string
+          format: uuid
+      required: [id, name, description, category, priceCents, recipe, ingredients, storageGuidelines, isActive, availability, branchId]
+    MenuItemInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          type: string
+        priceCents:
+          type: integer
+          minimum: 0
+        recipe:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngredientRequirement"
+        storageGuidelines:
+          type: string
+      required: [name, description, category, priceCents, recipe, ingredients, storageGuidelines]
+    MenuItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          type: string
+        priceCents:
+          type: integer
+          minimum: 0
+        recipe:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngredientRequirement"
+        storageGuidelines:
+          type: string
+        isActive:
+          type: boolean
+    AvailabilityInput:
+      type: object
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 0
+      required: [branchId, quantity]
+    StockLot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        ingredientName:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+        importDate:
+          type: string
+          format: date
+        supplier:
+          type: string
+        shelfLife:
+          type: ["string", "null"]
+          format: date
+      required: [id, branchId, branchName, ingredientName, quantity, unit, importDate, supplier, shelfLife]
+    StockLotInput:
+      type: object
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        ingredientName:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        unit:
+          type: string
+        importDate:
+          type: string
+          format: date
+        supplier:
+          type: string
+          minLength: 1
+        shelfLife:
+          type: ["string", "null"]
+          format: date
+      required: [branchId, ingredientName, quantity, unit, importDate, supplier, shelfLife]
+    OrderLineInput:
+      type: object
+      properties:
+        menuItemId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        size:
+          type: string
+          enum: [small, regular, large]
+        flavor:
+          type: string
+        toppings:
+          type: array
+          items:
+            type: string
+      required: [menuItemId, quantity, size, flavor, toppings]
+    OrderInput:
+      type: object
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      required: [lines]
+    OrderLine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        menuItemId:
+          type: string
+          format: uuid
+        menuItemName:
+          type: string
+        quantity:
+          type: integer
+        size:
+          type: string
+          enum: [small, regular, large]
+        flavor:
+          type: string
+        toppings:
+          type: array
+          items:
+            type: string
+        unitPriceCents:
+          type: integer
+        totalCents:
+          type: integer
+      required: [id, menuItemId, menuItemName, quantity, size, flavor, toppings, unitPriceCents, totalCents]
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum: [qr, card, transfer]
+        amountCents:
+          type: integer
+        status:
+          type: string
+          enum: [paid]
+        paidAt:
+          type: string
+          format: date-time
+      required: [id, method, amountCents, status, paidAt]
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [blending, resting, ready_to_serve]
+        totalCents:
+          type: integer
+        payment:
+          oneOf:
+            - $ref: "#/components/schemas/Payment"
+            - type: "null"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+      required: [id, branchId, branchName, createdBy, createdAt, status, totalCents, payment, lines]
+    OrderStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [blending, resting, ready_to_serve]
+      required: [status]
+    PaymentInput:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [qr, card, transfer]
+        amountCents:
+          type: integer
+          minimum: 0
+      required: [method, amountCents]
+    DashboardSummary:
+      type: object
+      properties:
+        activeOrders:
+          type: integer
+        todayOrders:
+          type: integer
+        todayRevenueCents:
+          type: integer
+        branchName:
+          type: string
+      required: [activeOrders, todayOrders, todayRevenueCents, branchName]
