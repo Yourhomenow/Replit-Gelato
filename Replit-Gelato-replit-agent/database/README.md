@@ -21,3 +21,7 @@ For recipes with ingredients, the available serving count is the smallest whole 
 Only unpaid orders created with a recorded stock deduction can be cancelled automatically. Each new order stores the exact lot quantities it consumed. Cancellation restores those lots and the menu serving count in one transaction, then marks the order cancelled. Repeated cancellation, preparation changes, and payment are rejected. Older orders have no deduction record, so cancelling them automatically could restore the wrong lot or amount. Paid orders need a separate refund process.
 
 Apply the schema with `pnpm --filter @workspace/db run push` before running the updated API. The new `stock_deductions` and `cancelled_at` fields are additive.
+
+## Manager financial summary
+
+The Finance page totals all-time recorded paid payments for the selected branch. It shows gross paid revenue, paid order count, average paid order amount, and revenue by QR, card, and bank transfer. It does not estimate costs or profit. Only managers can call the financial summary API. Staff dashboard summaries do not return a revenue amount.

@@ -49,3 +49,12 @@
 - [x] Merge all three feature branches into local `develop` and resolve the `App.tsx` import conflict.
 - [x] Run the full workspace typecheck and build after merging.
 - [ ] Push `develop` when ready; the merge is local only.
+
+## Manager financial summary (`feat/Manager-Financial-Summary`)
+
+- [x] Add a manager-only Finance page for the selected branch.
+- [x] Show all-time paid revenue, paid order count, average paid order, and revenue by payment method.
+- [x] Restrict the financial API to managers and hide dashboard revenue from staff.
+- [x] Verify manager access, staff and signed-out rejection, totals, and hidden staff revenue against the local API.
+- [x] Run the full workspace typecheck and build.
+- [ ] Check the page visually in a browser.

@@ -353,6 +353,20 @@ export interface DashboardSummary {
   branchName: string;
 }
 
+export type FinancialSummaryByMethodCents = {
+  qr: number;
+  card: number;
+  transfer: number;
+};
+
+export interface FinancialSummary {
+  branchName: string;
+  revenueCents: number;
+  paidOrders: number;
+  averageOrderCents: number;
+  byMethodCents: FinancialSummaryByMethodCents;
+}
+
 export type ListMenuParams = {
 search?: string;
 branchId?: string;
@@ -373,6 +387,10 @@ limit?: number;
 };
 
 export type GetDashboardSummaryParams = {
+branchId?: string;
+};
+
+export type GetFinancialSummaryParams = {
 branchId?: string;
 };
 

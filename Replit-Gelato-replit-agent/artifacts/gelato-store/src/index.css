@@ -497,6 +497,9 @@
 .small-button { min-height: 33px; padding: 0 11px; font-size: 11px; }
 .full-button { width: 100%; }
 .summary-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 13px; }
+.summary-row.two-cards { grid-template-columns: 1.2fr 1fr; }
+.financial-methods { display: grid; gap: 8px; }
+.financial-method { display: flex; justify-content: space-between; gap: 16px; padding: 16px 20px; border: 1px solid hsl(var(--card-border)); border-radius: 10px; background: hsl(var(--card)); }
 .low-stock-warning { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 20px; padding: 15px 17px; border: 1px solid #d7ae72; border-radius: 9px; background: #fff4df; color: #745126; }
 .low-stock-warning > svg { flex: 0 0 auto; margin-top: 1px; }
 .low-stock-warning > div { flex: 1; min-width: 0; }

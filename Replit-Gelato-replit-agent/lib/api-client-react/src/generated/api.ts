@@ -28,7 +28,9 @@ import type {
   DashboardSummary,
   Employee,
   ErrorResponse,
+  FinancialSummary,
   GetDashboardSummaryParams,
+  GetFinancialSummaryParams,
   HealthStatus,
   ListMenuParams,
   ListOrdersParams,
@@ -2006,6 +2008,90 @@ export function useGetDashboardSummary<TData = Awaited<ReturnType<typeof getDash
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetDashboardSummaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFinancialSummaryUrl = (params?: GetFinancialSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/dashboard/financial?${stringifiedParams}` : `/api/dashboard/financial`
+}
+
+/**
+ * @summary Get paid revenue summary for managers
+ */
+export const getFinancialSummary = async (params?: GetFinancialSummaryParams, options?: Parameters<typeof customFetch>[1]): Promise<FinancialSummary> => {
+
+  return customFetch<FinancialSummary>(getGetFinancialSummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFinancialSummaryQueryKey = (params?: GetFinancialSummaryParams,) => {
+    return [
+    `/api/dashboard/financial`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetFinancialSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<void>>(params?: GetFinancialSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinancialSummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinancialSummary>>> = ({ signal }) => getFinancialSummary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFinancialSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getFinancialSummary>>>
+export type GetFinancialSummaryQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid revenue summary for managers
+ */
+
+export function useGetFinancialSummary<TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<void>>(
+ params?: GetFinancialSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFinancialSummaryQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
