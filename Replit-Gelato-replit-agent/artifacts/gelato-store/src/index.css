@@ -778,3 +778,20 @@ label input:focus,label select:focus,label textarea:focus { border-color: #66857
   background: #f3f0e5;
   font-size: 14px;
 }
+
+.employee-list { overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 9px; background: hsl(var(--card)); }
+.employee-row { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 12px 17px; border-top: 1px solid hsl(var(--border)); }
+.employee-row:first-child { border-top: 0; }
+.employee-avatar { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border-radius: 11px; background: #e5eadc; color: #31564b; font: 600 12px var(--app-font-sans); }
+.employee-details { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.employee-details strong { font: 500 17px var(--app-font-serif); }
+.employee-details span { color: hsl(var(--muted-foreground)); font-size: 11px; overflow-wrap: anywhere; }
+.employee-role { min-width: 64px; text-transform: capitalize; color: hsl(var(--foreground)); font-size: 11px; }
+.employee-status { min-width: 72px; color: #9a6156; font-size: 11px; }
+.employee-status.active { color: #416d53; }
+.employee-actions { display: flex; gap: 7px; }
+@media (max-width: 760px) {
+  .employee-row { flex-wrap: wrap; }
+  .employee-details { flex-basis: calc(100% - 55px); }
+  .employee-actions { margin-left: auto; }
+}

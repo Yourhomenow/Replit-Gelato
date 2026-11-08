@@ -15,7 +15,64 @@ tags:
   - name: stock
   - name: orders
   - name: dashboard
+  - name: employees
 paths:
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List employees for managers
+      responses:
+        "200":
+          description: Employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create an active employee account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeInput"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+  /employees/{id}:
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update employee details or active status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeInput"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
   /healthz:
     get:
       operationId: healthCheck
@@ -479,6 +536,63 @@ components:
         name:
           type: string
       required: [id, name]
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        isActive:
+          type: boolean
+      required: [id, fullName, phone, role, branchId, branchName, isActive]
+    CreateEmployeeInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          minLength: 8
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+      required: [fullName, phone, password, role, branchId]
+    UpdateEmployeeInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
     AuthUser:
       type: object
       properties:

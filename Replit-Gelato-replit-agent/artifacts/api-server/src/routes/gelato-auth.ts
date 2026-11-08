@@ -33,11 +33,11 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const PHONE_PATTERN = /^\+?[0-9]{8,15}$/;
 
-function normalizePhone(phone: string): string {
+export function normalizePhone(phone: string): string {
   return phone.trim().replace(/[\s()-]/g, "");
 }
 
-function hashPassword(password: string): string {
+export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;

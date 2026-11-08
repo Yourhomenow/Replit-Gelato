@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
-import { ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, Users, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { EmployeesPage } from '@/pages/employees';
 import {
   getGetCurrentUserQueryKey, getGetDashboardSummaryQueryKey, getListMenuQueryKey,
   getListOrdersQueryKey, getListStockLotsQueryKey, useCreateMenuItem, useCreateOrder,
@@ -49,6 +50,7 @@ function Shell({ children, selectedBranchId, onBranchChange }: { children: React
     { href: '/orders', label: 'Orders', icon: ClipboardList },
     { href: '/menu', label: 'Menu', icon: IceCreamBowl },
     { href: '/stock', label: 'Stock', icon: Package },
+    ...(user.data?.role === 'manager' ? [{ href: '/employees', label: 'Employees', icon: Users }] : []),
   ];
   return <div className="app-shell">
     <aside className="sidebar">
@@ -243,7 +245,7 @@ function AppRoutes() {
   if (user.isLoading) return <div className="auth-loading" data-testid="state-auth-loading"><LoaderCircle className="spin" size={22} /><span>Opening your branch workspace…</span></div>;
   if (user.isError || !user.data) return <AuthPage />;
   const branchId = user.data.role === 'manager' ? selectedBranchId || user.data.branchId : user.data.branchId;
-  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} /><Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
+  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} />{user.data.role === 'manager' && <Route path="/employees"><EmployeesPage branchId={branchId} currentUserId={user.data.id} /></Route>}<Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
 }
 
 function App() {
