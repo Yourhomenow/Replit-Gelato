@@ -9,6 +9,9 @@ import {
   ListMenuResponse,
   ListStockLotsQueryParams,
   ListStockLotsResponse,
+  UpdateStockLotBody,
+  UpdateStockLotParams,
+  UpdateStockLotResponse,
   UpdateMenuAvailabilityBody,
   UpdateMenuAvailabilityParams,
   UpdateMenuAvailabilityResponse,
@@ -273,6 +276,41 @@ router.post("/stock", requireGelatoAuth, async (req, res): Promise<void> => {
         branchName: branch?.name ?? "",
       }),
     );
+});
+
+router.patch("/stock/:id", requireGelatoAuth, async (req, res): Promise<void> => {
+  const params = UpdateStockLotParams.safeParse(req.params);
+  const parsed = UpdateStockLotBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "Check the stock lot details" });
+    return;
+  }
+  const { ingredientName, quantity, unit, importDate, supplier, shelfLife } = parsed.data;
+  if (!ingredientName.trim() || !unit.trim() || !supplier.trim()) {
+    res.status(400).json({ error: "Ingredient, unit, and supplier are required" });
+    return;
+  }
+  const [existing] = await db.select({ branchId: stockLotsTable.branchId })
+    .from(stockLotsTable).where(eq(stockLotsTable.id, params.data.id)).limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Stock lot not found" });
+    return;
+  }
+  if (!canAccessBranch(req.gelatoUser!, existing.branchId)) {
+    res.status(403).json({ error: "You can only edit stock for your branch" });
+    return;
+  }
+  const [updated] = await db.update(stockLotsTable).set({
+    ingredientName: ingredientName.trim(),
+    quantity,
+    unit: unit.trim(),
+    importDate: importDate.toISOString().slice(0, 10),
+    supplier: supplier.trim(),
+    shelfLife: shelfLife?.toISOString().slice(0, 10) ?? null,
+  }).where(eq(stockLotsTable.id, params.data.id)).returning();
+  const [branch] = await db.select({ name: branchesTable.name })
+    .from(branchesTable).where(eq(branchesTable.id, updated.branchId)).limit(1);
+  res.json(UpdateStockLotResponse.parse({ ...updated, branchName: branch?.name ?? "" }));
 });
 
 export default router;

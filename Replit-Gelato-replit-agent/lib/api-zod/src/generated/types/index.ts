@@ -45,6 +45,7 @@ export * from './registerInput';
 export * from './registerInputRole';
 export * from './stockLot';
 export * from './stockLotInput';
+export * from './stockLotUpdate';
 export * from './updateEmployeeInput';
 export * from './updateEmployeeInputRole';
 export * from './verifyOtpInput';

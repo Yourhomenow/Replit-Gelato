@@ -12,7 +12,7 @@ import {
   getListOrdersQueryKey, getListStockLotsQueryKey, useCreateMenuItem, useCreateOrder,
   useCreateStockLot, useGetCurrentUser, useGetDashboardSummary, useListBranches,
   useListMenu, useListOrders, useListStockLots, useLogin, useLogout, useRecordPayment,
-  useRegister, useUpdateMenuAvailability, useUpdateMenuItem, useUpdateOrderStatus,
+  useRegister, useUpdateMenuAvailability, useUpdateMenuItem, useUpdateOrderStatus, useUpdateStockLot,
   useVerifyOtp,
 } from '@workspace/api-client-react';
 import type { MenuItem, MenuItemInput, Order, OrderLineInput, OrderStatusInputStatus, PaymentInputMethod, StockLot } from '@workspace/api-client-react';
@@ -216,17 +216,52 @@ function StockPage() {
   const visibleLots = lots.data?.filter((lot) => `${lot.ingredientName} ${lot.supplier}`.toLowerCase().includes(search.toLowerCase().trim())) ?? [];
   const lowItems = lowStockItems(lots.data ?? []);
   const create = useCreateStockLot();
+  const update = useUpdateStockLot();
   const qc = useQueryClient();
-  const [formOpen, setFormOpen] = useState(false);
-  return <><PageHeading eyebrow="INVENTORY" title="Stock on hand" subtitle="Remaining ingredient quantities update after each order and refresh every few seconds." action={<button className="button primary" onClick={() => setFormOpen(!formOpen)} data-testid="button-register-stock"><Plus size={17} /> Register stock</button>} />
+  const [editing, setEditing] = useState<StockLot | 'new' | null>(null);
+  useEffect(() => {
+    if (!editing) return;
+    const form = document.getElementById('stock-editor');
+    form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form?.querySelector('input')?.focus({ preventScroll: true });
+  }, [editing]);
+  const openEditor = (lot: StockLot | 'new') => { create.reset(); update.reset(); setEditing(lot); };
+  const closeEditor = () => { create.reset(); update.reset(); setEditing(null); };
+  const saveStock = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editing) return;
+    const fields = new FormData(event.currentTarget);
+    const data = {
+      ingredientName: String(fields.get('ingredient')).trim(),
+      quantity: Number(fields.get('quantity')),
+      unit: String(fields.get('unit')).trim(),
+      importDate: String(fields.get('date')),
+      supplier: String(fields.get('supplier')).trim(),
+      shelfLife: String(fields.get('shelfLife') || '') || null,
+    };
+    const onSuccess = () => { qc.invalidateQueries({ queryKey: getListStockLotsQueryKey() }); closeEditor(); };
+    if (editing === 'new') create.mutate({ data: { ...data, branchId } }, { onSuccess });
+    else update.mutate({ id: editing.id, data }, { onSuccess });
+  };
+  const dateValue = (date: string | null) => date?.slice(0, 10) ?? '';
+  return <><PageHeading eyebrow="INVENTORY" title="Stock on hand" subtitle="Remaining ingredient quantities update after each order and refresh every few seconds." action={<button className="button primary" disabled={create.isPending || update.isPending} onClick={() => openEditor('new')} data-testid="button-register-stock"><Plus size={17} /> Register stock</button>} />
     <LowStockWarning items={lots.isError ? [] : lowItems} />
-    {formOpen && <form className="stock-form" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); create.mutate({ data: { branchId, ingredientName: String(f.get('ingredient')), quantity: Number(f.get('quantity')), unit: String(f.get('unit')), importDate: String(f.get('date')), supplier: String(f.get('supplier')), shelfLife: String(f.get('shelfLife') || '') || null } }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListStockLotsQueryKey() }); setFormOpen(false); } }); }} data-testid="form-stock-lot">
-      <div className="form-topline"><div><div className="eyebrow">INCOMING LOT</div><h2>Register delivery</h2></div><button type="button" className="icon-button" onClick={() => setFormOpen(false)} aria-label="Close stock form" data-testid="button-close-stock-form"><X size={17} /></button></div>
-      <div className="stock-form-grid"><label>Ingredient<input name="ingredient" required placeholder="Pistachio paste" data-testid="input-stock-ingredient" /></label><label>Quantity<input name="quantity" type="number" step="0.01" min="0.01" required data-testid="input-stock-quantity" /></label><label>Unit<input name="unit" required placeholder="kg" data-testid="input-stock-unit" /></label><label>Import date<input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} data-testid="input-stock-date" /></label><label>Supplier<input name="supplier" required data-testid="input-stock-supplier" /></label><label>Shelf life<input name="shelfLife" type="date" data-testid="input-stock-shelf-life" /></label></div>{create.isError && <p className="inline-error">Could not register this lot. Please try again.</p>}<button className="button primary" disabled={create.isPending} data-testid="button-save-stock">{create.isPending ? 'Registering…' : 'Save stock lot'}</button>
+    {editing && <form id="stock-editor" className="stock-form" key={editing === 'new' ? 'new' : editing.id} onSubmit={saveStock} data-testid="form-stock-lot">
+      <div className="form-topline"><div><div className="eyebrow">{editing === 'new' ? 'INCOMING LOT' : 'STOCK LOT'}</div><h2>{editing === 'new' ? 'Register delivery' : 'Edit stock lot'}</h2></div><button type="button" className="icon-button" onClick={closeEditor} aria-label="Close stock form" data-testid="button-close-stock-form"><X size={17} /></button></div>
+      <div className="stock-form-grid">
+        <label>Ingredient<input name="ingredient" required placeholder="Pistachio paste" defaultValue={editing === 'new' ? '' : editing.ingredientName} data-testid="input-stock-ingredient" /></label>
+        <label>Quantity<input name="quantity" type="number" step="0.001" min={editing === 'new' ? '0.001' : '0'} required defaultValue={editing === 'new' ? '' : editing.quantity} data-testid="input-stock-quantity" /></label>
+        <label>Unit<input name="unit" required placeholder="kg" defaultValue={editing === 'new' ? '' : editing.unit} data-testid="input-stock-unit" /></label>
+        <label>Import date<input name="date" type="date" required defaultValue={editing === 'new' ? new Date().toISOString().slice(0, 10) : dateValue(editing.importDate)} data-testid="input-stock-date" /></label>
+        <label>Supplier<input name="supplier" required defaultValue={editing === 'new' ? '' : editing.supplier} data-testid="input-stock-supplier" /></label>
+        <label>Shelf life<input name="shelfLife" type="date" defaultValue={editing === 'new' ? '' : dateValue(editing.shelfLife)} data-testid="input-stock-shelf-life" /></label>
+      </div>
+      {(editing === 'new' ? create.isError : update.isError) && <p className="inline-error" role="alert">Could not save this stock lot. Check the details and try again.</p>}
+      <button className="button primary" disabled={create.isPending || update.isPending} data-testid="button-save-stock">{create.isPending || update.isPending ? 'Saving…' : editing === 'new' ? 'Save stock lot' : 'Save changes'}</button>
     </form>}
     <div className="toolbar"><label className="search-box wide-search"><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search ingredients or supplier" data-testid="input-stock-search" /></label><span className="result-hint">{visibleLots.length} lots</span></div>
     <QueryState loading={lots.isLoading} error={lots.isError} retry={() => lots.refetch()}>
-      {visibleLots.length ? <div className="stock-table"><div className="stock-table-head"><span>INGREDIENT</span><span>REMAINING</span><span>RECEIVED</span><span>SUPPLIER</span><span>SHELF LIFE</span></div>{visibleLots.map((lot) => <div className="stock-table-row" key={lot.id} data-testid={`row-stock-${lot.id}`}><div className="stock-ingredient"><span className="stock-icon"><Package size={17} /></span><strong>{lot.ingredientName}</strong></div><strong className="mono">{lot.quantity} {lot.unit}</strong><span>{lot.importDate}</span><span>{lot.supplier}</span><span>{lot.shelfLife || 'Not set'}</span></div>)}</div> : <EmptyState title={search ? 'No matching stock lots' : 'No stock lots yet'} message={search ? 'Try another ingredient or supplier.' : 'Register a delivery to keep branch stock visible.'} action={!search && !formOpen && <button className="button secondary" onClick={() => setFormOpen(true)} data-testid="button-empty-register-stock"><Plus size={15} /> Register first lot</button>} />}
+      {visibleLots.length ? <div className="stock-table"><div className="stock-table-head"><span>INGREDIENT</span><span>REMAINING</span><span>RECEIVED</span><span>SUPPLIER</span><span>SHELF LIFE</span><span>ACTION</span></div>{visibleLots.map((lot) => <div className="stock-table-row" key={lot.id} data-testid={`row-stock-${lot.id}`}><div className="stock-ingredient"><span className="stock-icon"><Package size={17} /></span><strong>{lot.ingredientName}</strong></div><strong className="mono">{lot.quantity} {lot.unit}</strong><span>{dateValue(lot.importDate)}</span><span>{lot.supplier}</span><span>{dateValue(lot.shelfLife) || 'Not set'}</span><button className="button secondary small-button" disabled={create.isPending || update.isPending} onClick={() => openEditor(lot)} data-testid={`button-edit-stock-${lot.id}`}>Edit</button></div>)}</div> : <EmptyState title={search ? 'No matching stock lots' : 'No stock lots yet'} message={search ? 'Try another ingredient or supplier.' : 'Register a delivery to keep branch stock visible.'} action={!search && !editing && <button className="button secondary" onClick={() => openEditor('new')} data-testid="button-empty-register-stock"><Plus size={15} /> Register first lot</button>} />}
     </QueryState>
   </>;
 }

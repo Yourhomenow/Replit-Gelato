@@ -1,6 +1,6 @@
 # SPEC — Gelato Store Management (Prototype)
 
-Goal: one working sale flow, end to end, through DB, API, and screen. Everything else comes after.
+Goal: Prototype. Make it work first. Keep it simple. Spend tokens only on the current slice.
 
 **Roles:** `staff`, `manager`. Manager can do everything staff can unless noted.
 **Branches:** each user belongs to a branch. Managers can view across branches.
@@ -57,5 +57,3 @@ Goal: one working sale flow, end to end, through DB, API, and screen. Everything
 - Does an order deduct stock on creation or on payment? Pick one, record it in `database/README.md`.
 - What safety threshold is used for low-stock: per item or global?
 
-## Not in the prototype
-Real SMS, real payment gateway, push notifications, animations, visual polish, multi-language.

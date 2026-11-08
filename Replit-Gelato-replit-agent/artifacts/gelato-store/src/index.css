@@ -643,7 +643,7 @@ label input:focus,label select:focus,label textarea:focus { border-color: #66857
 .stock-form { margin: -8px 0 20px; padding: 20px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--card)); }
 .stock-form-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .stock-table { border: 1px solid hsl(var(--border)); border-radius: 9px; overflow: hidden; background: hsl(var(--card)); }
-.stock-table-head,.stock-table-row { display: grid; grid-template-columns: 1.35fr .8fr .8fr 1fr .8fr; gap: 14px; align-items: center; }
+.stock-table-head,.stock-table-row { display: grid; grid-template-columns: 1.35fr .8fr .8fr 1fr .8fr auto; gap: 14px; align-items: center; }
 .stock-table-head { padding: 12px 17px; color: #828478; background: #f0ede3; font: 9px var(--app-font-mono); letter-spacing: .08em; }
 .stock-table-row { min-height: 56px; padding: 8px 17px; border-top: 1px solid hsl(var(--border)); color: #73796f; font-size: 10px; }
 .stock-ingredient { display: flex; align-items: center; gap: 9px; color: hsl(var(--foreground)); }
@@ -741,7 +741,7 @@ label input:focus,label select:focus,label textarea:focus { border-color: #66857
   .menu-meta span:last-child { display: none; }
   .menu-name-line h2 { font-size: 17px; }
   .stock-table { overflow-x: auto; }
-  .stock-table-head,.stock-table-row { min-width: 680px; }
+  .stock-table-head,.stock-table-row { min-width: 760px; }
   .stock-form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .auth-page { padding: 18px; }
   .auth-layout { min-height: auto; grid-template-columns: 1fr; gap: 12px; margin-top: 25px; }

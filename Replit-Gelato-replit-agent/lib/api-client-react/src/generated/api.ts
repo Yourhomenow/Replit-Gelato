@@ -44,6 +44,7 @@ import type {
   RegisterInput,
   StockLot,
   StockLotInput,
+  StockLotUpdate,
   UpdateEmployeeInput,
   VerifyOtpInput
 } from './api.schemas';
@@ -1418,6 +1419,95 @@ export const useCreateStockLot = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getCreateStockLotMutationOptions(options));
+    }
+
+export const getUpdateStockLotUrl = (id: string,) => {
+
+
+
+
+  return `/api/stock/${id}`
+}
+
+/**
+ * @summary Edit an existing stock lot
+ */
+export const updateStockLot = async (id: string,
+    stockLotUpdate: StockLotUpdate, options?: Parameters<typeof customFetch>[1]): Promise<StockLot> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StockLot>(getUpdateStockLotUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(stockLotUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateStockLotMutationKey = () => ['updateStockLot'] as const;
+
+export const getUpdateStockLotMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStockLot>>, TError,UpdateStockLotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStockLot>>, TError,UpdateStockLotMutationVariables, TContext> => {
+
+const mutationKey = getUpdateStockLotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStockLot>>, UpdateStockLotMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateStockLot(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStockLotMutationResult = NonNullable<Awaited<ReturnType<typeof updateStockLot>>>
+    export type UpdateStockLotMutationBody = BodyType<StockLotUpdate>
+    export type UpdateStockLotMutationError = ErrorType<ErrorResponse>
+    export type UpdateStockLotMutationVariables = {id: string;data: BodyType<StockLotUpdate>}
+
+    /**
+ * @summary Edit an existing stock lot
+ */
+export const useUpdateStockLot = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStockLot>>, TError,UpdateStockLotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateStockLot>>,
+        TError,
+        UpdateStockLotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateStockLotMutationOptions(options));
     }
 
 export const getListOrdersUrl = (params?: ListOrdersParams,) => {

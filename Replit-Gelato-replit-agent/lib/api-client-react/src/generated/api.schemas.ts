@@ -211,6 +211,20 @@ export interface StockLotInput {
   shelfLife: string | null;
 }
 
+export interface StockLotUpdate {
+  /** @minLength 1 */
+  ingredientName: string;
+  /** @minimum 0 */
+  quantity: number;
+  /** @minLength 1 */
+  unit: string;
+  importDate: string;
+  /** @minLength 1 */
+  supplier: string;
+  /** @nullable */
+  shelfLife: string | null;
+}
+
 export type OrderLineInputSize = typeof OrderLineInputSize[keyof typeof OrderLineInputSize];
 
 

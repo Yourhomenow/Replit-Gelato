@@ -421,6 +421,46 @@ export const CreateStockLotResponse = zod.object({
 
 
 /**
+ * @summary Edit an existing stock lot
+ */
+export const UpdateStockLotParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const updateStockLotBodyQuantityMin = 0;
+
+
+
+
+
+export const UpdateStockLotBody = zod.object({
+  "ingredientName": zod.string().min(1),
+  "quantity": zod.number().min(updateStockLotBodyQuantityMin),
+  "unit": zod.string().min(1),
+  "importDate": zod.coerce.date(),
+  "supplier": zod.string().min(1),
+  "shelfLife": zod.coerce.date().nullable()
+})
+
+export const updateStockLotResponseQuantityMin = 0;
+
+
+
+export const UpdateStockLotResponse = zod.object({
+  "id": zod.string().uuid(),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number().min(updateStockLotResponseQuantityMin),
+  "unit": zod.string(),
+  "importDate": zod.coerce.date(),
+  "supplier": zod.string(),
+  "shelfLife": zod.coerce.date().nullable()
+})
+
+
+/**
  * @summary List recent orders
  */
 export const listOrdersQueryLimitDefault = 30;

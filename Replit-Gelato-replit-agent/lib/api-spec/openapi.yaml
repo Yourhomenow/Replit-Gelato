@@ -371,6 +371,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /stock/{id}:
+    patch:
+      operationId: updateStockLot
+      tags: [stock]
+      summary: Edit an existing stock lot
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockLotUpdate"
+      responses:
+        "200":
+          description: Updated stock lot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockLot"
+        "400":
+          description: Invalid stock lot details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed for this branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Stock lot not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /orders:
     get:
       operationId: listOrders
@@ -811,6 +854,28 @@ components:
           type: ["string", "null"]
           format: date
       required: [branchId, ingredientName, quantity, unit, importDate, supplier, shelfLife]
+    StockLotUpdate:
+      type: object
+      properties:
+        ingredientName:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          minLength: 1
+        importDate:
+          type: string
+          format: date
+        supplier:
+          type: string
+          minLength: 1
+        shelfLife:
+          type: ["string", "null"]
+          format: date
+      required: [ingredientName, quantity, unit, importDate, supplier, shelfLife]
     OrderLineInput:
       type: object
       properties:
