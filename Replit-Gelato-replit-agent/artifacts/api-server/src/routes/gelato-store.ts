@@ -31,6 +31,7 @@ import {
   requireGelatoAuth,
   requireManager,
 } from "../middlewares/gelato-auth";
+import { branchStockAmounts, servingsFromStock, syncMenuAvailabilityFromStock } from "../lib/stock-availability";
 
 const router: IRouter = Router();
 
@@ -59,7 +60,9 @@ async function menuItemForBranch(menuItemId: string, branchId: string) {
     )
     .where(eq(menuItemsTable.id, menuItemId))
     .limit(1);
-  return row ? { ...row, availability: row.availability ?? 0, branchId } : null;
+  if (!row) return null;
+  const capacity = servingsFromStock(row.ingredients, await branchStockAmounts(branchId));
+  return { ...row, availability: capacity === null ? row.availability ?? 0 : Math.min(row.availability ?? 0, capacity), branchId };
 }
 
 router.get("/menu", requireGelatoAuth, async (req, res): Promise<void> => {
@@ -109,9 +112,13 @@ router.get("/menu", requireGelatoAuth, async (req, res): Promise<void> => {
     )
     .where(and(...filters))
     .orderBy(asc(menuItemsTable.category), asc(menuItemsTable.name));
+  const stock = await branchStockAmounts(branchId);
   res.json(
     ListMenuResponse.parse(
-      rows.map((row) => ({ ...row, availability: row.availability ?? 0, branchId })),
+      rows.map((row) => {
+        const capacity = servingsFromStock(row.ingredients, stock);
+        return { ...row, availability: capacity === null ? row.availability ?? 0 : Math.min(row.availability ?? 0, capacity), branchId };
+      }),
     ),
   );
 });
@@ -135,6 +142,7 @@ router.post(
       await db.insert(menuAvailabilityTable).values(
         branches.map((branch) => ({ branchId: branch.id, menuItemId: item.id })),
       );
+      for (const branch of branches) await syncMenuAvailabilityFromStock(branch.id);
     }
     const result = await menuItemForBranch(item.id, req.gelatoUser!.branchId);
     res.status(201).json(CreateMenuItemResponse.parse(result));
@@ -161,6 +169,8 @@ router.patch(
       res.status(404).json({ error: "Menu item not found" });
       return;
     }
+    const branches = await db.select({ id: branchesTable.id }).from(branchesTable);
+    for (const branch of branches) await syncMenuAvailabilityFromStock(branch.id);
     const result = await menuItemForBranch(updated.id, req.gelatoUser!.branchId);
     res.json(UpdateMenuItemResponse.parse(result));
   },
@@ -263,6 +273,7 @@ router.post("/stock", requireGelatoAuth, async (req, res): Promise<void> => {
       shelfLife: parsed.data.shelfLife?.toISOString().slice(0, 10) ?? null,
     })
     .returning();
+  await syncMenuAvailabilityFromStock(lot.branchId);
   const [branch] = await db
     .select({ name: branchesTable.name })
     .from(branchesTable)
@@ -308,6 +319,7 @@ router.patch("/stock/:id", requireGelatoAuth, async (req, res): Promise<void> =>
     supplier: supplier.trim(),
     shelfLife: shelfLife?.toISOString().slice(0, 10) ?? null,
   }).where(eq(stockLotsTable.id, params.data.id)).returning();
+  await syncMenuAvailabilityFromStock(updated.branchId);
   const [branch] = await db.select({ name: branchesTable.name })
     .from(branchesTable).where(eq(branchesTable.id, updated.branchId)).limit(1);
   res.json(UpdateStockLotResponse.parse({ ...updated, branchName: branch?.name ?? "" }));

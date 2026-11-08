@@ -1,4 +1,4 @@
-import { and, count, eq, gte, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, isNull, sql, sum } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   GetDashboardSummaryQueryParams,
@@ -30,7 +30,7 @@ router.get(
       res.status(403).json({ error: "You can only view your branch summary" });
       return;
     }
-    const filters = [gte(ordersTable.createdAt, new Date(new Date().setUTCHours(0, 0, 0, 0)))];
+    const filters = [gte(ordersTable.createdAt, new Date(new Date().setUTCHours(0, 0, 0, 0))), isNull(ordersTable.cancelledAt)];
     if (branchId) filters.push(eq(ordersTable.branchId, branchId));
     const [totals] = await db
       .select({

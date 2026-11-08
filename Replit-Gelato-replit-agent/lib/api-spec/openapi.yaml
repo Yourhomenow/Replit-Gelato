@@ -501,6 +501,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /orders/{id}/cancel:
+    post:
+      operationId: cancelOrder
+      tags: [orders]
+      summary: Cancel an unpaid order and restore its reserved inventory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cancelled order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "403":
+          description: Not allowed for this branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already paid, cancelled, or missing inventory reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /orders/{id}/payment:
     post:
       operationId: recordPayment
@@ -971,6 +1008,11 @@ components:
         status:
           type: string
           enum: [blending, resting, ready_to_serve]
+        cancelledAt:
+          type: ["string", "null"]
+          format: date-time
+        canCancel:
+          type: boolean
         totalCents:
           type: integer
         payment:
@@ -981,7 +1023,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrderLine"
-      required: [id, branchId, branchName, createdBy, createdAt, status, totalCents, payment, lines]
+      required: [id, branchId, branchName, createdBy, createdAt, status, cancelledAt, canCancel, totalCents, payment, lines]
     OrderStatusInput:
       type: object
       properties:

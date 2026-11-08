@@ -21,6 +21,8 @@ export type IngredientRequirement = {
   unit: string;
 };
 
+export type StockDeduction = { lotId: string; quantity: number };
+
 export const userRoleEnum = pgEnum("user_role", ["staff", "manager"]);
 export const orderStatusEnum = pgEnum("gelato_order_status", [
   "blending",
@@ -154,6 +156,8 @@ export const ordersTable = pgTable(
       .notNull()
       .references(() => usersTable.id),
     status: orderStatusEnum("status").notNull().default("blending"),
+    stockDeductions: jsonb("stock_deductions").$type<StockDeduction[]>(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     totalCents: integer("total_cents").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

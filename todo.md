@@ -22,6 +22,28 @@
 - [x] Record the threshold rule in `database/README.md`.
 - [ ] Verify the warning appears and clears in a browser as stock changes.
 
+## Stock lot editing (`feat/Stock-Lot-Edit`)
+
+- [x] Add an Edit button to each stock lot and allow its details and remaining quantity to be saved.
+- [x] Verify saved changes and rejection of invalid, signed-out, and cross-branch edits against a disposable database.
+- [ ] Verify the edit form in a browser.
+
+## Menu availability from stock (`feat/Order-Cancel-Stock-Availability`)
+
+- [x] Recalculate recipe serving counts from matching branch ingredient stock after stock or recipe changes and on API startup.
+- [x] Limit displayed menu availability to what the ingredient stock can make.
+- [x] Apply the additive schema fields to the local database and reconcile existing stock: Sukhumvit Pistachio Cream returned from 0 to 273 available servings.
+- [x] Verify a stock delivery restored availability from 0 to 26 in a disposable database, then a two-serving order reduced it to 24.
+- [ ] Verify the menu refresh in a browser after a stock delivery.
+
+## Order cancellation (`feat/Order-Cancel-Stock-Availability`)
+
+- [x] Add a confirmed Cancel order action for unpaid orders with recorded inventory deductions.
+- [x] Restore exact stock lot quantities and menu availability in one transaction.
+- [x] Verify cancellation, repeated cancellation rejection, multi-lot restoration, paid-order rejection, and cross-branch access in a disposable database.
+- [ ] Verify cancellation and restored counts in a browser.
+- [ ] Decide how to handle older orders that lack an inventory deduction record; automatic cancellation is disabled for them.
+
 ## Integration
 
 - [x] Merge all three feature branches into local `develop` and resolve the `App.tsx` import conflict.

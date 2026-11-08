@@ -310,6 +310,9 @@ export interface Order {
   createdBy: string;
   createdAt: string;
   status: OrderStatus;
+  /** @nullable */
+  cancelledAt: string | null;
+  canCancel: boolean;
   totalCents: number;
   payment: Payment | null;
   lines: OrderLine[];

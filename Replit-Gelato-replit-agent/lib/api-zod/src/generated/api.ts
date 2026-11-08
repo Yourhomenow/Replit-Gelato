@@ -480,6 +480,8 @@ export const ListOrdersResponseItem = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -528,6 +530,8 @@ export const CreateOrderResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -568,6 +572,46 @@ export const UpdateOrderStatusResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
+  "totalCents": zod.number().int(),
+  "payment": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "method": zod.enum(['qr', 'card', 'transfer']),
+  "amountCents": zod.number().int(),
+  "status": zod.enum(['paid']),
+  "paidAt": zod.coerce.date()
+}),zod.null()]),
+  "lines": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "menuItemId": zod.string().uuid(),
+  "menuItemName": zod.string(),
+  "quantity": zod.number().int(),
+  "size": zod.enum(['small', 'regular', 'large']),
+  "flavor": zod.string(),
+  "toppings": zod.array(zod.string()),
+  "unitPriceCents": zod.number().int(),
+  "totalCents": zod.number().int()
+}))
+})
+
+
+/**
+ * @summary Cancel an unpaid order and restore its reserved inventory
+ */
+export const CancelOrderParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const CancelOrderResponse = zod.object({
+  "id": zod.string().uuid(),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -613,6 +657,8 @@ export const RecordPaymentResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),

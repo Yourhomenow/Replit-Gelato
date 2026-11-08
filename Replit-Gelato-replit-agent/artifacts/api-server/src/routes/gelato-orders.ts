@@ -4,11 +4,14 @@ import {
   desc,
   eq,
   inArray,
+  sql,
 } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   CreateOrderBody,
   CreateOrderResponse,
+  CancelOrderParams,
+  CancelOrderResponse,
   ListOrdersQueryParams,
   ListOrdersResponse,
   RecordPaymentBody,
@@ -54,6 +57,8 @@ async function serializeOrders(orderIds: string[]) {
       createdBy: usersTable.fullName,
       createdAt: ordersTable.createdAt,
       status: ordersTable.status,
+      cancelledAt: ordersTable.cancelledAt,
+      stockDeductions: ordersTable.stockDeductions,
       totalCents: ordersTable.totalCents,
     })
     .from(ordersTable)
@@ -78,9 +83,12 @@ async function serializeOrders(orderIds: string[]) {
   }
   return baseRows.map((row) => {
     const payment = paymentByOrder.get(row.id);
+    const { stockDeductions, ...order } = row;
     return {
-      ...row,
+      ...order,
       createdAt: row.createdAt.toISOString(),
+      cancelledAt: row.cancelledAt?.toISOString() ?? null,
+      canCancel: !row.cancelledAt && !payment && stockDeductions !== null,
       payment: payment
         ? {
             id: payment.id,
@@ -204,7 +212,7 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           });
         }
       }
-      const stockDeductions: Array<{ lotId: string; remaining: number }> = [];
+      const stockDeductions: Array<{ lotId: string; quantity: number; remaining: number }> = [];
       for (const requirement of [...ingredientRequirements.values()].sort((a, b) =>
         `${a.ingredientName}|${a.unit}`.localeCompare(`${b.ingredientName}|${b.unit}`),
       )) {
@@ -217,8 +225,8 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           .where(
             and(
               eq(stockLotsTable.branchId, orderBranchId),
-              eq(stockLotsTable.ingredientName, requirement.ingredientName),
-              eq(stockLotsTable.unit, requirement.unit),
+              sql`lower(trim(${stockLotsTable.ingredientName})) = ${requirement.ingredientName.trim().toLocaleLowerCase()}`,
+              sql`lower(trim(${stockLotsTable.unit})) = ${requirement.unit.trim().toLocaleLowerCase()}`,
             ),
           )
           .orderBy(asc(stockLotsTable.importDate), asc(stockLotsTable.id))
@@ -229,7 +237,7 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           const quantity = Number(lot.quantity);
           const deduction = Math.min(quantity, needed);
           if (deduction > 0) {
-            stockDeductions.push({ lotId: lot.id, remaining: quantity - deduction });
+            stockDeductions.push({ lotId: lot.id, quantity: deduction, remaining: quantity - deduction });
             needed -= deduction;
           }
         }
@@ -283,6 +291,7 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           createdBy: user.id,
           totalCents,
           status: "blending",
+          stockDeductions: stockDeductions.map(({ lotId, quantity }) => ({ lotId, quantity })),
         })
         .returning({ id: ordersTable.id });
       await tx.insert(orderLinesTable).values(
@@ -292,6 +301,64 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
     });
     const order = await serializedOrder(orderId);
     res.status(201).json(CreateOrderResponse.parse(order));
+  } catch (error) {
+    if (error instanceof FlowError) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+router.post("/orders/:id/cancel", requireGelatoAuth, async (req, res): Promise<void> => {
+  const params = CancelOrderParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid order ID" });
+    return;
+  }
+  try {
+    const orderId = await db.transaction(async (tx) => {
+      const [order] = await tx.select().from(ordersTable)
+        .where(eq(ordersTable.id, params.data.id)).for("update").limit(1);
+      if (!order) throw new FlowError("Order not found", 404);
+      if (!canAccessBranch(req.gelatoUser!, order.branchId)) {
+        throw new FlowError("You can only cancel orders for your branch", 403);
+      }
+      if (order.cancelledAt) throw new FlowError("This order is already cancelled", 409);
+      const [payment] = await tx.select({ id: paymentsTable.id }).from(paymentsTable)
+        .where(eq(paymentsTable.orderId, order.id)).limit(1);
+      if (payment) throw new FlowError("Paid orders cannot be cancelled without a refund", 409);
+      if (order.stockDeductions === null) {
+        throw new FlowError("This older order has no inventory record to restore", 409);
+      }
+      const lines = await tx.select({ menuItemId: orderLinesTable.menuItemId, quantity: orderLinesTable.quantity })
+        .from(orderLinesTable).where(eq(orderLinesTable.orderId, order.id));
+      const quantities = new Map<string, number>();
+      for (const line of lines) quantities.set(line.menuItemId, (quantities.get(line.menuItemId) ?? 0) + line.quantity);
+      for (const [menuItemId, quantity] of [...quantities].sort(([a], [b]) => a.localeCompare(b))) {
+        const [availability] = await tx.select({ id: menuAvailabilityTable.id })
+          .from(menuAvailabilityTable).where(and(
+            eq(menuAvailabilityTable.branchId, order.branchId),
+            eq(menuAvailabilityTable.menuItemId, menuItemId),
+          )).for("update").limit(1);
+        if (!availability) throw new FlowError("Menu availability record is missing", 409);
+        await tx.update(menuAvailabilityTable)
+          .set({ quantity: sql`${menuAvailabilityTable.quantity} + ${quantity}` })
+          .where(eq(menuAvailabilityTable.id, availability.id));
+      }
+      for (const deduction of order.stockDeductions) {
+        const [lot] = await tx.select({ id: stockLotsTable.id }).from(stockLotsTable)
+          .where(eq(stockLotsTable.id, deduction.lotId)).for("update").limit(1);
+        if (!lot) throw new FlowError("A reserved stock lot is missing", 409);
+        await tx.update(stockLotsTable)
+          .set({ quantity: sql`${stockLotsTable.quantity} + ${deduction.quantity}` })
+          .where(eq(stockLotsTable.id, lot.id));
+      }
+      await tx.update(ordersTable).set({ cancelledAt: new Date() })
+        .where(eq(ordersTable.id, order.id));
+      return order.id;
+    });
+    res.json(CancelOrderResponse.parse(await serializedOrder(orderId)));
   } catch (error) {
     if (error instanceof FlowError) {
       res.status(error.statusCode).json({ error: error.message });
@@ -327,6 +394,9 @@ router.patch(
           statusCode: 403,
           id: null,
         } as const;
+      }
+      if (current.cancelledAt) {
+        return { error: "Cancelled orders cannot be advanced", statusCode: 409, id: null } as const;
       }
       const currentIndex = statusOrder.indexOf(current.status);
       const nextIndex = statusOrder.indexOf(parsed.data.status);
@@ -375,6 +445,7 @@ router.post(
         if (!canAccessBranch(req.gelatoUser!, order.branchId)) {
           throw new FlowError("You can only record payment for your branch", 403);
         }
+        if (order.cancelledAt) throw new FlowError("Cancelled orders cannot be paid", 409);
         const [existing] = await tx
           .select({ id: paymentsTable.id })
           .from(paymentsTable)
