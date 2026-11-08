@@ -2,12 +2,13 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
-import { AlertTriangle, ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, Users, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, CircleDollarSign, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, Users, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { EmployeesPage } from '@/pages/employees';
 import { PromotionsPage } from '@/pages/promotions';
+import { FinancialSummaryPage } from '@/pages/financial-summary';
 import {
   getGetCurrentUserQueryKey, getGetDashboardSummaryQueryKey, getListMenuQueryKey, getListPromotionsQueryKey,
   getListOrdersQueryKey, getListStockLotsQueryKey, useCreateMenuItem, useCreateOrder,
@@ -71,7 +72,7 @@ function Shell({ children, selectedBranchId, onBranchChange }: { children: React
     { href: '/orders', label: 'Orders', icon: ClipboardList },
     { href: '/menu', label: 'Menu', icon: IceCreamBowl },
     { href: '/stock', label: 'Stock', icon: Package },
-    ...(user.data?.role === 'manager' ? [{ href: '/employees', label: 'Employees', icon: Users }, { href: '/promotions', label: 'Promotions', icon: Sparkles }] : []),
+    ...(user.data?.role === 'manager' ? [{ href: '/employees', label: 'Employees', icon: Users }, { href: '/promotions', label: 'Promotions', icon: Sparkles }, { href: '/financial-summary', label: 'Finance', icon: CircleDollarSign }] : []),
   ];
   return <div className="app-shell">
     <aside className="sidebar">
@@ -116,10 +117,10 @@ function HomePage() {
     {user.data?.role === 'manager' && !stock.isError && <LowStockWarning items={lowStockItems(stock.data ?? [])} showLink />}
     {user.data?.role === 'manager' && stock.isError && <div className="low-stock-warning" role="status"><CircleAlert size={20} /><div><strong>Stock warning unavailable</strong><p>Stock levels could not be checked right now.</p></div><button className="text-link" onClick={() => stock.refetch()}>Try again</button></div>}
     <QueryState loading={summary.isLoading || orders.isLoading} error={summary.isError || orders.isError} retry={retry}>
-      {summary.data && <div className="summary-row">
+      {summary.data && <div className={`summary-row ${user.data?.role === 'manager' ? '' : 'two-cards'}`}>
         <article className="summary-card summary-feature"><div className="summary-label">ACTIVE ORDERS <span className="tiny-dot" /></div><div className="summary-value">{summary.data.activeOrders}</div><div className="summary-foot">In preparation now <ArrowDownRight size={15} /></div><div className="summary-watermark"><IceCreamBowl size={76} /></div></article>
         <article className="summary-card"><div className="summary-label">ORDERS TODAY</div><div className="summary-value">{summary.data.todayOrders}</div><div className="summary-foot">Across this branch</div></article>
-        <article className="summary-card"><div className="summary-label">TAKEN TODAY</div><div className="summary-value">{money(summary.data.todayRevenueCents)}</div><div className="summary-foot">Recorded payments</div></article>
+        {user.data?.role === 'manager' && <article className="summary-card"><div className="summary-label">TAKEN TODAY</div><div className="summary-value">{money(summary.data.todayRevenueCents)}</div><div className="summary-foot">Recorded payments</div></article>}
       </div>}
       <section className="section-block"><div className="section-heading"><div><div className="eyebrow">THE PASS</div><h2>Active orders</h2></div><Link href="/orders" className="text-link" data-testid="link-all-orders">All orders <ArrowRight size={15} /></Link></div>
         {activeOrders.length ? <div className="order-table">{activeOrders.map((order) => <OrderRow key={order.id} order={order} compact />)}</div> : <EmptyState title="Your pass is clear" message="New orders will appear here as soon as they’re created." action={<Link href="/new-order" className="button secondary" data-testid="button-create-first-order">Create first order <ArrowRight size={15} /></Link>} />}
@@ -322,7 +323,7 @@ function AppRoutes() {
   if (user.isLoading) return <div className="auth-loading" data-testid="state-auth-loading"><LoaderCircle className="spin" size={22} /><span>Opening your branch workspace…</span></div>;
   if (user.isError || !user.data) return <AuthPage />;
   const branchId = user.data.role === 'manager' ? selectedBranchId || user.data.branchId : user.data.branchId;
-  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} />{user.data.role === 'manager' && <Route path="/employees"><EmployeesPage branchId={branchId} currentUserId={user.data.id} /></Route>}{user.data.role === 'manager' && <Route path="/promotions"><PromotionsPage branchId={branchId} /></Route>}<Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
+  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} />{user.data.role === 'manager' && <Route path="/employees"><EmployeesPage branchId={branchId} currentUserId={user.data.id} /></Route>}{user.data.role === 'manager' && <Route path="/promotions"><PromotionsPage branchId={branchId} /></Route>}{user.data.role === 'manager' && <Route path="/financial-summary"><FinancialSummaryPage branchId={branchId} /></Route>}<Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
 }
 
 function App() {

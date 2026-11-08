@@ -48,6 +48,7 @@
 
 - [x] Merge all three feature branches into local `develop` and resolve the `App.tsx` import conflict.
 - [x] Run the full workspace typecheck and build after merging.
+- [x] Merge Promotions and Manager Financial Summary into local `develop`, resolve conflicts, regenerate API clients, and verify the combined build.
 - [ ] Push `develop` when ready; the merge is local only.
 
 ## Promotions (`feat/Promotions`)
@@ -61,3 +62,12 @@
 - [x] Verify manager access, staff rejection, invalid campaigns, current and future campaigns, overlapping discounts, disabled campaigns, discounted checkout, and unchanged historical totals against a disposable database.
 - [x] Run the full workspace typecheck and build.
 - [ ] Check the campaign editor and checkout visually in a browser.
+
+## Manager financial summary (`feat/Manager-Financial-Summary`)
+
+- [x] Add a manager-only Finance page for the selected branch.
+- [x] Show all-time paid revenue, paid order count, average paid order, and revenue by payment method.
+- [x] Restrict the financial API to managers and hide dashboard revenue from staff.
+- [x] Verify manager access, staff and signed-out rejection, totals, and hidden staff revenue against the local API.
+- [x] Run the full workspace typecheck and build.
+- [ ] Check the page visually in a browser.

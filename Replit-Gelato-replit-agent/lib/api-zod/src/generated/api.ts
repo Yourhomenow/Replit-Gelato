@@ -783,3 +783,23 @@ export const GetDashboardSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary Get paid revenue summary for managers
+ */
+export const GetFinancialSummaryQueryParams = zod.object({
+  "branchId": zod.coerce.string().uuid().optional()
+})
+
+export const GetFinancialSummaryResponse = zod.object({
+  "branchName": zod.string(),
+  "revenueCents": zod.number().int(),
+  "paidOrders": zod.number().int(),
+  "averageOrderCents": zod.number().int(),
+  "byMethodCents": zod.object({
+  "qr": zod.number().int(),
+  "card": zod.number().int(),
+  "transfer": zod.number().int()
+})
+})
+
+

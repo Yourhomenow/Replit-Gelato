@@ -29,3 +29,7 @@ Managers create and update campaigns with a name, whole percent discount, one or
 At order creation, the API applies the highest active discount for each eligible item. Ties use a stable campaign ID order. It rounds the discount to cents per serving, then multiplies by the order quantity. Order lines save the original unit price, discount amount, campaign name, and final line total, so later campaign edits do not change an existing order. The order total and recorded payment amount use the discounted total. The ticket shows an estimate from current campaigns; the server calculates the final amount when the order is saved.
 
 Apply the schema with `pnpm --filter @workspace/db run push`. The `gelato_promotions` table and order line discount fields are additive.
+
+## Manager financial summary
+
+The Finance page totals all-time recorded paid payments for the selected branch. It shows gross paid revenue, paid order count, average paid order amount, and revenue by QR, card, and bank transfer. It does not estimate costs or profit. Only managers can call the financial summary API. Staff dashboard summaries do not return a revenue amount.

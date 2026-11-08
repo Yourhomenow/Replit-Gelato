@@ -656,6 +656,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/financial:
+    get:
+      operationId: getFinancialSummary
+      tags: [dashboard]
+      summary: Get paid revenue summary for managers
+      parameters:
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialSummary"
+        "403":
+          description: Manager access required
 components:
   schemas:
     Promotion:
@@ -1170,3 +1190,25 @@ components:
         branchName:
           type: string
       required: [activeOrders, todayOrders, todayRevenueCents, branchName]
+    FinancialSummary:
+      type: object
+      properties:
+        branchName:
+          type: string
+        revenueCents:
+          type: integer
+        paidOrders:
+          type: integer
+        averageOrderCents:
+          type: integer
+        byMethodCents:
+          type: object
+          properties:
+            qr:
+              type: integer
+            card:
+              type: integer
+            transfer:
+              type: integer
+          required: [qr, card, transfer]
+      required: [branchName, revenueCents, paidOrders, averageOrderCents, byMethodCents]
