@@ -18,6 +18,61 @@ export interface Branch {
   name: string;
 }
 
+export type EmployeeRole = typeof EmployeeRole[keyof typeof EmployeeRole];
+
+
+export const EmployeeRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface Employee {
+  id: string;
+  fullName: string;
+  phone: string;
+  role: EmployeeRole;
+  branchId: string;
+  branchName: string;
+  isActive: boolean;
+}
+
+export type CreateEmployeeInputRole = typeof CreateEmployeeInputRole[keyof typeof CreateEmployeeInputRole];
+
+
+export const CreateEmployeeInputRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface CreateEmployeeInput {
+  /** @minLength 2 */
+  fullName: string;
+  /** @minLength 8 */
+  phone: string;
+  /** @minLength 8 */
+  password: string;
+  role: CreateEmployeeInputRole;
+  branchId: string;
+}
+
+export type UpdateEmployeeInputRole = typeof UpdateEmployeeInputRole[keyof typeof UpdateEmployeeInputRole];
+
+
+export const UpdateEmployeeInputRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface UpdateEmployeeInput {
+  /** @minLength 2 */
+  fullName?: string;
+  /** @minLength 8 */
+  phone?: string;
+  role?: UpdateEmployeeInputRole;
+  branchId?: string;
+  isActive?: boolean;
+}
+
 export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
 
 

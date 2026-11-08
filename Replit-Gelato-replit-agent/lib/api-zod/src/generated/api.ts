@@ -9,6 +9,83 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List employees for managers
+ */
+export const ListEmployeesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+export const ListEmployeesResponse = zod.array(ListEmployeesResponseItem)
+
+
+/**
+ * @summary Create an active employee account
+ */
+export const createEmployeeBodyFullNameMin = 2;
+
+export const createEmployeeBodyPhoneMin = 8;
+
+export const createEmployeeBodyPasswordMin = 8;
+
+
+
+export const CreateEmployeeBody = zod.object({
+  "fullName": zod.string().min(createEmployeeBodyFullNameMin),
+  "phone": zod.string().min(createEmployeeBodyPhoneMin),
+  "password": zod.string().min(createEmployeeBodyPasswordMin),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid()
+})
+
+export const CreateEmployeeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Update employee details or active status
+ */
+export const UpdateEmployeeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const updateEmployeeBodyFullNameMin = 2;
+
+export const updateEmployeeBodyPhoneMin = 8;
+
+
+
+export const UpdateEmployeeBody = zod.object({
+  "fullName": zod.string().min(updateEmployeeBodyFullNameMin).optional(),
+  "phone": zod.string().min(updateEmployeeBodyPhoneMin).optional(),
+  "role": zod.enum(['staff', 'manager']).optional(),
+  "branchId": zod.string().uuid().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateEmployeeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
