@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
-import { ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,7 +14,7 @@ import {
   useRegister, useUpdateMenuAvailability, useUpdateMenuItem, useUpdateOrderStatus,
   useVerifyOtp,
 } from '@workspace/api-client-react';
-import type { MenuItem, MenuItemInput, Order, OrderLineInput, OrderStatusInputStatus, PaymentInputMethod } from '@workspace/api-client-react';
+import type { MenuItem, MenuItemInput, Order, OrderLineInput, OrderStatusInputStatus, PaymentInputMethod, StockLot } from '@workspace/api-client-react';
 
 const client = new QueryClient();
 const BranchSelectionContext = createContext<{
@@ -30,6 +30,19 @@ const statusLabel: Record<string, string> = { blending: 'Blending', resting: 'Re
 const statusNext: Record<string, OrderStatusInputStatus> = { blending: 'resting', resting: 'ready_to_serve' };
 const stages = ['blending', 'resting', 'ready_to_serve'];
 const inventoryRefreshMs = 3000;
+const lowStockThreshold = 2;
+const stockQuantity = (quantity: number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(quantity);
+
+function lowStockItems(lots: StockLot[]) {
+  const totals = new Map<string, { ingredientName: string; unit: string; quantity: number }>();
+  for (const lot of lots) {
+    const key = JSON.stringify([lot.ingredientName, lot.unit]);
+    const total = totals.get(key) ?? { ingredientName: lot.ingredientName, unit: lot.unit, quantity: 0 };
+    total.quantity += Number(lot.quantity);
+    totals.set(key, total);
+  }
+  return [...totals.values()].filter((item) => item.quantity < lowStockThreshold).sort((a, b) => a.quantity - b.quantity);
+}
 
 function QueryState({ loading, error, retry, children }: { loading: boolean; error: boolean; retry: () => void; children: ReactNode }) {
   if (loading) return <div className="skeleton-stack" data-testid="state-loading"><div className="skeleton wide" /><div className="skeleton" /><div className="skeleton" /></div>;
@@ -77,13 +90,22 @@ function EmptyState({ title, message, action }: { title: string; message: string
   return <div className="empty-state" data-testid="state-empty"><div className="empty-mark"><IceCreamBowl size={22} /></div><strong>{title}</strong><p>{message}</p>{action}</div>;
 }
 
+function LowStockWarning({ items, showLink = false }: { items: ReturnType<typeof lowStockItems>; showLink?: boolean }) {
+  if (!items.length) return null;
+  return <section className="low-stock-warning" role="status" data-testid="warning-low-stock"><AlertTriangle size={20} /><div><strong>Low stock: below 2 per ingredient</strong><p>{items.map((item) => `${item.ingredientName}: ${stockQuantity(item.quantity)} ${item.unit} left`).join(' · ')}. Restock before the next rush.</p></div>{showLink && <Link href="/stock" className="text-link">View stock <ArrowRight size={14} /></Link>}</section>;
+}
+
 function HomePage() {
   const branch = useCurrentBranchId();
+  const user = useGetCurrentUser();
   const summary = useGetDashboardSummary({ branchId: branch });
   const orders = useListOrders({ branchId: branch, limit: 6 });
+  const stock = useListStockLots({ branchId: branch }, { query: { queryKey: getListStockLotsQueryKey({ branchId: branch }), enabled: user.data?.role === 'manager', refetchInterval: inventoryRefreshMs } });
   const activeOrders = orders.data?.filter((o) => !o.payment) || [];
   const retry = () => { summary.refetch(); orders.refetch(); };
   return <><PageHeading eyebrow="AT A GLANCE" title="Good service starts here." subtitle="A clear view of what’s moving at your counter today." action={<Link href="/new-order" className="button primary" data-testid="button-start-order"><Plus size={17} /> Start an order</Link>} />
+    {user.data?.role === 'manager' && !stock.isError && <LowStockWarning items={lowStockItems(stock.data ?? [])} showLink />}
+    {user.data?.role === 'manager' && stock.isError && <div className="low-stock-warning" role="status"><CircleAlert size={20} /><div><strong>Stock warning unavailable</strong><p>Stock levels could not be checked right now.</p></div><button className="text-link" onClick={() => stock.refetch()}>Try again</button></div>}
     <QueryState loading={summary.isLoading || orders.isLoading} error={summary.isError || orders.isError} retry={retry}>
       {summary.data && <div className="summary-row">
         <article className="summary-card summary-feature"><div className="summary-label">ACTIVE ORDERS <span className="tiny-dot" /></div><div className="summary-value">{summary.data.activeOrders}</div><div className="summary-foot">In preparation now <ArrowDownRight size={15} /></div><div className="summary-watermark"><IceCreamBowl size={76} /></div></article>
@@ -188,18 +210,21 @@ function MenuPage() {
 function StockPage() {
   const branchId = useCurrentBranchId();
   const [search, setSearch] = useState('');
-  const lots = useListStockLots({ branchId, search: search || undefined }, { query: { queryKey: getListStockLotsQueryKey({ branchId, search: search || undefined }), refetchInterval: inventoryRefreshMs } });
+  const lots = useListStockLots({ branchId }, { query: { queryKey: getListStockLotsQueryKey({ branchId }), refetchInterval: inventoryRefreshMs } });
+  const visibleLots = lots.data?.filter((lot) => `${lot.ingredientName} ${lot.supplier}`.toLowerCase().includes(search.toLowerCase().trim())) ?? [];
+  const lowItems = lowStockItems(lots.data ?? []);
   const create = useCreateStockLot();
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   return <><PageHeading eyebrow="INVENTORY" title="Stock on hand" subtitle="Remaining ingredient quantities update after each order and refresh every few seconds." action={<button className="button primary" onClick={() => setFormOpen(!formOpen)} data-testid="button-register-stock"><Plus size={17} /> Register stock</button>} />
+    <LowStockWarning items={lots.isError ? [] : lowItems} />
     {formOpen && <form className="stock-form" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); create.mutate({ data: { branchId, ingredientName: String(f.get('ingredient')), quantity: Number(f.get('quantity')), unit: String(f.get('unit')), importDate: String(f.get('date')), supplier: String(f.get('supplier')), shelfLife: String(f.get('shelfLife') || '') || null } }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListStockLotsQueryKey() }); setFormOpen(false); } }); }} data-testid="form-stock-lot">
       <div className="form-topline"><div><div className="eyebrow">INCOMING LOT</div><h2>Register delivery</h2></div><button type="button" className="icon-button" onClick={() => setFormOpen(false)} aria-label="Close stock form" data-testid="button-close-stock-form"><X size={17} /></button></div>
       <div className="stock-form-grid"><label>Ingredient<input name="ingredient" required placeholder="Pistachio paste" data-testid="input-stock-ingredient" /></label><label>Quantity<input name="quantity" type="number" step="0.01" min="0.01" required data-testid="input-stock-quantity" /></label><label>Unit<input name="unit" required placeholder="kg" data-testid="input-stock-unit" /></label><label>Import date<input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} data-testid="input-stock-date" /></label><label>Supplier<input name="supplier" required data-testid="input-stock-supplier" /></label><label>Shelf life<input name="shelfLife" type="date" data-testid="input-stock-shelf-life" /></label></div>{create.isError && <p className="inline-error">Could not register this lot. Please try again.</p>}<button className="button primary" disabled={create.isPending} data-testid="button-save-stock">{create.isPending ? 'Registering…' : 'Save stock lot'}</button>
     </form>}
-    <div className="toolbar"><label className="search-box wide-search"><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search ingredients or supplier" data-testid="input-stock-search" /></label><span className="result-hint">{lots.data?.length ?? 0} lots</span></div>
+    <div className="toolbar"><label className="search-box wide-search"><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search ingredients or supplier" data-testid="input-stock-search" /></label><span className="result-hint">{visibleLots.length} lots</span></div>
     <QueryState loading={lots.isLoading} error={lots.isError} retry={() => lots.refetch()}>
-      {lots.data?.length ? <div className="stock-table"><div className="stock-table-head"><span>INGREDIENT</span><span>REMAINING</span><span>RECEIVED</span><span>SUPPLIER</span><span>SHELF LIFE</span></div>{lots.data.map((lot) => <div className="stock-table-row" key={lot.id} data-testid={`row-stock-${lot.id}`}><div className="stock-ingredient"><span className="stock-icon"><Package size={17} /></span><strong>{lot.ingredientName}</strong></div><strong className="mono">{lot.quantity} {lot.unit}</strong><span>{lot.importDate}</span><span>{lot.supplier}</span><span>{lot.shelfLife || 'Not set'}</span></div>)}</div> : <EmptyState title="No stock lots yet" message="Register a delivery to keep branch stock visible." action={!formOpen && <button className="button secondary" onClick={() => setFormOpen(true)} data-testid="button-empty-register-stock"><Plus size={15} /> Register first lot</button>} />}
+      {visibleLots.length ? <div className="stock-table"><div className="stock-table-head"><span>INGREDIENT</span><span>REMAINING</span><span>RECEIVED</span><span>SUPPLIER</span><span>SHELF LIFE</span></div>{visibleLots.map((lot) => <div className="stock-table-row" key={lot.id} data-testid={`row-stock-${lot.id}`}><div className="stock-ingredient"><span className="stock-icon"><Package size={17} /></span><strong>{lot.ingredientName}</strong></div><strong className="mono">{lot.quantity} {lot.unit}</strong><span>{lot.importDate}</span><span>{lot.supplier}</span><span>{lot.shelfLife || 'Not set'}</span></div>)}</div> : <EmptyState title={search ? 'No matching stock lots' : 'No stock lots yet'} message={search ? 'Try another ingredient or supplier.' : 'Register a delivery to keep branch stock visible.'} action={!search && !formOpen && <button className="button secondary" onClick={() => setFormOpen(true)} data-testid="button-empty-register-stock"><Plus size={15} /> Register first lot</button>} />}
     </QueryState>
   </>;
 }

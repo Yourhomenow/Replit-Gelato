@@ -495,6 +495,14 @@
 .small-button { min-height: 33px; padding: 0 11px; font-size: 11px; }
 .full-button { width: 100%; }
 .summary-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 13px; }
+.low-stock-warning { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 20px; padding: 15px 17px; border: 1px solid #d7ae72; border-radius: 9px; background: #fff4df; color: #745126; }
+.low-stock-warning > svg { flex: 0 0 auto; margin-top: 1px; }
+.low-stock-warning > div { flex: 1; min-width: 0; }
+.low-stock-warning strong { display: block; font-size: 13px; }
+.low-stock-warning p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.low-stock-warning .text-link { color: #745126; white-space: nowrap; }
+.low-stock-warning button.text-link { padding: 0; border: 0; background: none; cursor: pointer; }
+@media (max-width: 600px) { .low-stock-warning { flex-wrap: wrap; } .low-stock-warning .text-link { margin-left: 32px; } }
 .summary-card { min-height: 150px; position: relative; overflow: hidden; padding: 20px 21px; border-radius: 10px; border: 1px solid hsl(var(--card-border)); background: hsl(var(--card)); }
 .summary-feature { color: #f8f4e8; background: #31564b; border-color: #31564b; }
 .summary-label { font: 500 9px var(--app-font-mono); letter-spacing: .12em; opacity: .76; }
