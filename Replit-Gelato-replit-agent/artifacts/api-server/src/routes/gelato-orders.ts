@@ -29,6 +29,7 @@ import {
   orderLinesTable,
   ordersTable,
   paymentsTable,
+  promotionsTable,
   stockLotsTable,
   usersTable,
 } from "@workspace/db";
@@ -268,10 +269,18 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           .where(eq(stockLotsTable.id, deduction.lotId));
       }
 
+      const now = new Date();
+      const promotions = (await tx.select().from(promotionsTable).for("share"))
+        .filter((promotion) => promotion.isActive && promotion.startsAt <= now && now < promotion.endsAt);
       let totalCents = 0;
       const lineValues = parsed.data.lines.map((line) => {
         const item = itemsById.get(line.menuItemId)!;
-        const lineTotal = item.priceCents * line.quantity;
+        const promotion = promotions
+          .filter((campaign) => campaign.menuItemIds.includes(line.menuItemId))
+          .sort((a, b) => b.discountPercent - a.discountPercent || a.id.localeCompare(b.id))[0];
+        const discountCents = promotion
+          ? Math.round(item.priceCents * promotion.discountPercent / 100) * line.quantity : 0;
+        const lineTotal = item.priceCents * line.quantity - discountCents;
         totalCents += lineTotal;
         return {
           menuItemId: line.menuItemId,
@@ -281,6 +290,8 @@ router.post("/orders", requireGelatoAuth, async (req, res): Promise<void> => {
           flavor: line.flavor,
           toppings: line.toppings,
           unitPriceCents: item.priceCents,
+          discountCents,
+          promotionName: promotion?.name ?? null,
           totalCents: lineTotal,
         };
       });

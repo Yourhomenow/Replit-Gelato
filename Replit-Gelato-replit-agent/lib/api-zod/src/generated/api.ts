@@ -9,6 +9,83 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List current promotions, or all promotions for managers
+ */
+export const ListPromotionsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+export const ListPromotionsResponse = zod.array(ListPromotionsResponseItem)
+
+
+/**
+ * @summary Create a promotion (manager only)
+ */
+
+export const createPromotionBodyDiscountPercentMax = 100;
+
+
+
+
+export const CreatePromotionBody = zod.object({
+  "name": zod.string().min(1),
+  "discountPercent": zod.number().int().min(1).max(createPromotionBodyDiscountPercentMax),
+  "menuItemIds": zod.array(zod.string().uuid()).min(1),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+export const CreatePromotionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Update a promotion (manager only)
+ */
+export const UpdatePromotionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const updatePromotionBodyDiscountPercentMax = 100;
+
+
+
+
+export const UpdatePromotionBody = zod.object({
+  "name": zod.string().min(1),
+  "discountPercent": zod.number().int().min(1).max(updatePromotionBodyDiscountPercentMax),
+  "menuItemIds": zod.array(zod.string().uuid()).min(1),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+export const UpdatePromotionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+
+/**
  * @summary List employees for managers
  */
 export const ListEmployeesResponseItem = zod.object({
@@ -118,7 +195,7 @@ export const RegisterBody = zod.object({
   "fullName": zod.string().min(registerBodyFullNameMin),
   "phone": zod.string().min(registerBodyPhoneMin),
   "password": zod.string().min(registerBodyPasswordMin),
-  "role": zod.enum(['staff', 'manager']),
+  "role": zod.enum(['staff']),
   "branchId": zod.string().uuid()
 })
 
@@ -499,6 +576,8 @@ export const ListOrdersResponseItem = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -549,6 +628,8 @@ export const CreateOrderResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -591,6 +672,8 @@ export const UpdateOrderStatusResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -629,6 +712,8 @@ export const CancelOrderResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -676,6 +761,8 @@ export const RecordPaymentResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })

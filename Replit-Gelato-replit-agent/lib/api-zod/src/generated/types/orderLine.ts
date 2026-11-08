@@ -16,5 +16,8 @@ export interface OrderLine {
   flavor: string;
   toppings: string[];
   unitPriceCents: number;
+  discountCents: number;
+  /** @nullable */
+  promotionName: string | null;
   totalCents: number;
 }

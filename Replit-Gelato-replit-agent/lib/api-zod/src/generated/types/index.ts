@@ -41,6 +41,8 @@ export * from './paymentInput';
 export * from './paymentInputMethod';
 export * from './paymentMethod';
 export * from './paymentStatus';
+export * from './promotion';
+export * from './promotionInput';
 export * from './registerInput';
 export * from './registerInputRole';
 export * from './stockLot';

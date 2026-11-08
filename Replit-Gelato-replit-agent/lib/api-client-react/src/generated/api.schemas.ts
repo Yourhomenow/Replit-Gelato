@@ -5,6 +5,31 @@
  * Gelato store operations for staff and managers
  * OpenAPI spec version: 0.1.0
  */
+export interface Promotion {
+  id: string;
+  name: string;
+  discountPercent: number;
+  menuItemIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+}
+
+export interface PromotionInput {
+  /** @minLength 1 */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  discountPercent: number;
+  /** @minItems 1 */
+  menuItemIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -95,7 +120,6 @@ export type RegisterInputRole = typeof RegisterInputRole[keyof typeof RegisterIn
 
 export const RegisterInputRole = {
   staff: 'staff',
-  manager: 'manager',
 } as const;
 
 export interface RegisterInput {
@@ -267,6 +291,9 @@ export interface OrderLine {
   flavor: string;
   toppings: string[];
   unitPriceCents: number;
+  discountCents: number;
+  /** @nullable */
+  promotionName: string | null;
   totalCents: number;
 }
 

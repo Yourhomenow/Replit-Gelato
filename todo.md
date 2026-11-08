@@ -49,3 +49,15 @@
 - [x] Merge all three feature branches into local `develop` and resolve the `App.tsx` import conflict.
 - [x] Run the full workspace typecheck and build after merging.
 - [ ] Push `develop` when ready; the merge is local only.
+
+## Promotions (`feat/Promotions`)
+
+- [x] Add campaign name, discount percent, selected menu items, active dates, and enabled state.
+- [x] Add manager-only create and edit API endpoints and a manager campaign editor.
+- [x] Apply the best current discount automatically when an order is created; save the discount on each order line.
+- [x] Show current sale prices in the menu and new-order ticket.
+- [x] Prevent public registration from selecting the manager role.
+- [x] Apply the additive schema to the local development database.
+- [x] Verify manager access, staff rejection, invalid campaigns, current and future campaigns, overlapping discounts, disabled campaigns, discounted checkout, and unchanged historical totals against a disposable database.
+- [x] Run the full workspace typecheck and build.
+- [ ] Check the campaign editor and checkout visually in a browser.

@@ -21,3 +21,11 @@ For recipes with ingredients, the available serving count is the smallest whole 
 Only unpaid orders created with a recorded stock deduction can be cancelled automatically. Each new order stores the exact lot quantities it consumed. Cancellation restores those lots and the menu serving count in one transaction, then marks the order cancelled. Repeated cancellation, preparation changes, and payment are rejected. Older orders have no deduction record, so cancelling them automatically could restore the wrong lot or amount. Paid orders need a separate refund process.
 
 Apply the schema with `pnpm --filter @workspace/db run push` before running the updated API. The new `stock_deductions` and `cancelled_at` fields are additive.
+
+## Promotions
+
+Managers create and update campaigns with a name, whole percent discount, one or more menu items, start and end times, and an enabled switch. Campaigns apply to all branches. Staff can see only currently active campaigns. The API requires an active manager session for promotion changes. Public registration creates staff accounts only; managers create additional manager accounts through Employee Management.
+
+At order creation, the API applies the highest active discount for each eligible item. Ties use a stable campaign ID order. It rounds the discount to cents per serving, then multiplies by the order quantity. Order lines save the original unit price, discount amount, campaign name, and final line total, so later campaign edits do not change an existing order. The order total and recorded payment amount use the discounted total. The ticket shows an estimate from current campaigns; the server calculates the final amount when the order is saved.
+
+Apply the schema with `pnpm --filter @workspace/db run push`. The `gelato_promotions` table and order line discount fields are additive.

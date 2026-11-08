@@ -53,7 +53,7 @@ Goal: Prototype. Make it work first. Keep it simple. Spend tokens only on the cu
 - **Promotions:** manager configures and updates campaigns (name, discount rate, applicable menu items, active duration).
 
 ## Open decisions (decide when you reach them)
-- Do promotions change order totals at checkout? Not specified.
+- Promotions reduce order totals at checkout. Apply the best eligible active discount to each menu item automatically.
 - Does an order deduct stock on creation or on payment? Pick one, record it in `database/README.md`.
 - What safety threshold is used for low-stock: per item or global?
 

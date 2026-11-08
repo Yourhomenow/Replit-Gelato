@@ -805,8 +805,23 @@ label input:focus,label select:focus,label textarea:focus { border-color: #66857
 .employee-status { min-width: 72px; color: #9a6156; font-size: 11px; }
 .employee-status.active { color: #416d53; }
 .employee-actions { display: flex; gap: 7px; }
+.promotion-list { display: grid; gap: 12px; }
+.promotion-card { display: flex; align-items: center; gap: 17px; padding: 18px 20px; border: 1px solid hsl(var(--border)); border-radius: 14px; background: hsl(var(--card)); }
+.promotion-icon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 12px; background: #f5ead4; color: #9b692f; }
+.promotion-details { display: grid; gap: 6px; flex: 1; min-width: 0; }
+.promotion-title { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.promotion-title h2 { margin: 0; font: 500 19px var(--app-font-serif); }
+.promotion-details p, .promotion-details small { margin: 0; color: hsl(var(--muted-foreground)); font-size: 12px; }
+.promotion-rate { color: #9b692f; white-space: nowrap; }
+.promotion-items { display: grid; gap: 9px; margin: 18px 0; padding: 14px; border: 1px solid hsl(var(--border)); border-radius: 10px; }
+.promotion-items legend { padding: 0 5px; font-size: 12px; font-weight: 600; }
+.promotion-items label, .promotion-active { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.promotion-note { color: #9b692f; font-size: 11px; }
+.menu-price small { display: block; color: hsl(var(--muted-foreground)); font-size: 11px; font-weight: 400; }
 @media (max-width: 760px) {
   .employee-row { flex-wrap: wrap; }
   .employee-details { flex-basis: calc(100% - 55px); }
   .employee-actions { margin-left: auto; }
+  .promotion-card { flex-wrap: wrap; }
+  .promotion-details { flex-basis: calc(100% - 65px); }
 }

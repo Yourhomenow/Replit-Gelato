@@ -104,6 +104,10 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Enter a name, valid phone, password, role, and branch" });
     return;
   }
+  if (parsed.data.role !== "staff") {
+    res.status(403).json({ error: "Manager accounts must be created by a manager" });
+    return;
+  }
   const phone = normalizePhone(parsed.data.phone);
   if (!PHONE_PATTERN.test(phone)) {
     res.status(400).json({ error: "Enter a valid phone number" });
