@@ -21,6 +21,8 @@ export type IngredientRequirement = {
   unit: string;
 };
 
+export type StockDeduction = { lotId: string; quantity: number };
+
 export const userRoleEnum = pgEnum("user_role", ["staff", "manager"]);
 export const orderStatusEnum = pgEnum("gelato_order_status", [
   "blending",
@@ -96,6 +98,17 @@ export const menuItemsTable = pgTable(
   (table) => [index("gelato_menu_name_idx").on(table.name)],
 );
 
+export const promotionsTable = pgTable("gelato_promotions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  discountPercent: integer("discount_percent").notNull(),
+  menuItemIds: uuid("menu_item_ids").array().notNull(),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const menuAvailabilityTable = pgTable(
   "gelato_menu_availability",
   {
@@ -154,6 +167,8 @@ export const ordersTable = pgTable(
       .notNull()
       .references(() => usersTable.id),
     status: orderStatusEnum("status").notNull().default("blending"),
+    stockDeductions: jsonb("stock_deductions").$type<StockDeduction[]>(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     totalCents: integer("total_cents").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -179,6 +194,8 @@ export const orderLinesTable = pgTable(
     flavor: text("flavor").notNull(),
     toppings: text("toppings").array().notNull().default([]),
     unitPriceCents: integer("unit_price_cents").notNull(),
+    discountCents: integer("discount_cents").notNull().default(0),
+    promotionName: text("promotion_name"),
     totalCents: integer("total_cents").notNull(),
   },
   (table) => [index("gelato_order_lines_order_idx").on(table.orderId)],
@@ -203,6 +220,7 @@ export type InsertStockLot = z.infer<typeof insertStockLotSchema>;
 export type Branch = typeof branchesTable.$inferSelect;
 export type GelatoUser = typeof usersTable.$inferSelect;
 export type MenuItem = typeof menuItemsTable.$inferSelect;
+export type Promotion = typeof promotionsTable.$inferSelect;
 export type StockLot = typeof stockLotsTable.$inferSelect;
 export type GelatoOrder = typeof ordersTable.$inferSelect;
 export type GelatoOrderLine = typeof orderLinesTable.$inferSelect;

@@ -16,6 +16,9 @@ export interface Order {
   createdBy: string;
   createdAt: Date;
   status: OrderStatus;
+  /** @nullable */
+  cancelledAt: Date | null;
+  canCancel: boolean;
   totalCents: number;
   payment: Payment | null;
   lines: OrderLine[];

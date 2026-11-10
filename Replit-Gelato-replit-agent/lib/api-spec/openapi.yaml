@@ -15,7 +15,127 @@ tags:
   - name: stock
   - name: orders
   - name: dashboard
+  - name: employees
+  - name: promotions
 paths:
+  /promotions:
+    get:
+      operationId: listPromotions
+      tags: [promotions]
+      summary: List current promotions, or all promotions for managers
+      responses:
+        "200":
+          description: Promotions visible to the signed in user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Promotion"
+    post:
+      operationId: createPromotion
+      tags: [promotions]
+      summary: Create a promotion (manager only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionInput"
+      responses:
+        "201":
+          description: Promotion created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+        "403":
+          description: Manager access required
+  /promotions/{id}:
+    patch:
+      operationId: updatePromotion
+      tags: [promotions]
+      summary: Update a promotion (manager only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionInput"
+      responses:
+        "200":
+          description: Promotion updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+        "403":
+          description: Manager access required
+        "404":
+          description: Promotion not found
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List employees for managers
+      responses:
+        "200":
+          description: Employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create an active employee account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeInput"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+  /employees/{id}:
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update employee details or active status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeInput"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
   /healthz:
     get:
       operationId: healthCheck
@@ -314,6 +434,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /stock/{id}:
+    patch:
+      operationId: updateStockLot
+      tags: [stock]
+      summary: Edit an existing stock lot
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockLotUpdate"
+      responses:
+        "200":
+          description: Updated stock lot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockLot"
+        "400":
+          description: Invalid stock lot details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed for this branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Stock lot not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /orders:
     get:
       operationId: listOrders
@@ -401,6 +564,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /orders/{id}/cancel:
+    post:
+      operationId: cancelOrder
+      tags: [orders]
+      summary: Cancel an unpaid order and restore its reserved inventory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cancelled order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "403":
+          description: Not allowed for this branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already paid, cancelled, or missing inventory reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /orders/{id}/payment:
     post:
       operationId: recordPayment
@@ -456,8 +656,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/financial:
+    get:
+      operationId: getFinancialSummary
+      tags: [dashboard]
+      summary: Get paid revenue summary for managers
+      parameters:
+        - in: query
+          name: branchId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialSummary"
+        "403":
+          description: Manager access required
 components:
   schemas:
+    Promotion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        discountPercent:
+          type: integer
+        menuItemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+      required: [id, name, discountPercent, menuItemIds, startsAt, endsAt, isActive]
+    PromotionInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        discountPercent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        menuItemIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+      required: [name, discountPercent, menuItemIds, startsAt, endsAt, isActive]
     HealthStatus:
       type: object
       properties:
@@ -479,6 +749,63 @@ components:
         name:
           type: string
       required: [id, name]
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        isActive:
+          type: boolean
+      required: [id, fullName, phone, role, branchId, branchName, isActive]
+    CreateEmployeeInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          minLength: 8
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+      required: [fullName, phone, password, role, branchId]
+    UpdateEmployeeInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [staff, manager]
+        branchId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
     AuthUser:
       type: object
       properties:
@@ -512,7 +839,7 @@ components:
           minLength: 8
         role:
           type: string
-          enum: [staff, manager]
+          enum: [staff]
         branchId:
           type: string
           format: uuid
@@ -697,6 +1024,28 @@ components:
           type: ["string", "null"]
           format: date
       required: [branchId, ingredientName, quantity, unit, importDate, supplier, shelfLife]
+    StockLotUpdate:
+      type: object
+      properties:
+        ingredientName:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+          minLength: 1
+        importDate:
+          type: string
+          format: date
+        supplier:
+          type: string
+          minLength: 1
+        shelfLife:
+          type: ["string", "null"]
+          format: date
+      required: [ingredientName, quantity, unit, importDate, supplier, shelfLife]
     OrderLineInput:
       type: object
       properties:
@@ -752,9 +1101,13 @@ components:
             type: string
         unitPriceCents:
           type: integer
+        discountCents:
+          type: integer
+        promotionName:
+          type: ["string", "null"]
         totalCents:
           type: integer
-      required: [id, menuItemId, menuItemName, quantity, size, flavor, toppings, unitPriceCents, totalCents]
+      required: [id, menuItemId, menuItemName, quantity, size, flavor, toppings, unitPriceCents, discountCents, promotionName, totalCents]
     Payment:
       type: object
       properties:
@@ -792,6 +1145,11 @@ components:
         status:
           type: string
           enum: [blending, resting, ready_to_serve]
+        cancelledAt:
+          type: ["string", "null"]
+          format: date-time
+        canCancel:
+          type: boolean
         totalCents:
           type: integer
         payment:
@@ -802,7 +1160,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrderLine"
-      required: [id, branchId, branchName, createdBy, createdAt, status, totalCents, payment, lines]
+      required: [id, branchId, branchName, createdBy, createdAt, status, cancelledAt, canCancel, totalCents, payment, lines]
     OrderStatusInput:
       type: object
       properties:
@@ -832,3 +1190,25 @@ components:
         branchName:
           type: string
       required: [activeOrders, todayOrders, todayRevenueCents, branchName]
+    FinancialSummary:
+      type: object
+      properties:
+        branchName:
+          type: string
+        revenueCents:
+          type: integer
+        paidOrders:
+          type: integer
+        averageOrderCents:
+          type: integer
+        byMethodCents:
+          type: object
+          properties:
+            qr:
+              type: integer
+            card:
+              type: integer
+            transfer:
+              type: integer
+          required: [qr, card, transfer]
+      required: [branchName, revenueCents, paidOrders, averageOrderCents, byMethodCents]

@@ -33,11 +33,11 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const PHONE_PATTERN = /^\+?[0-9]{8,15}$/;
 
-function normalizePhone(phone: string): string {
+export function normalizePhone(phone: string): string {
   return phone.trim().replace(/[\s()-]/g, "");
 }
 
-function hashPassword(password: string): string {
+export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
@@ -102,6 +102,10 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   const parsed = RegisterBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Enter a name, valid phone, password, role, and branch" });
+    return;
+  }
+  if (parsed.data.role !== "staff") {
+    res.status(403).json({ error: "Manager accounts must be created by a manager" });
     return;
   }
   const phone = normalizePhone(parsed.data.phone);

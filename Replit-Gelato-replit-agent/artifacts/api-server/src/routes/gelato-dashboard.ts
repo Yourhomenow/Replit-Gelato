@@ -1,8 +1,10 @@
-import { and, count, eq, gte, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, isNull, sql, sum } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   GetDashboardSummaryQueryParams,
   GetDashboardSummaryResponse,
+  GetFinancialSummaryQueryParams,
+  GetFinancialSummaryResponse,
 } from "@workspace/api-zod";
 import {
   branchesTable,
@@ -10,7 +12,7 @@ import {
   ordersTable,
   paymentsTable,
 } from "@workspace/db";
-import { canAccessBranch, requireGelatoAuth } from "../middlewares/gelato-auth";
+import { canAccessBranch, requireGelatoAuth, requireManager } from "../middlewares/gelato-auth";
 
 const router: IRouter = Router();
 
@@ -30,7 +32,7 @@ router.get(
       res.status(403).json({ error: "You can only view your branch summary" });
       return;
     }
-    const filters = [gte(ordersTable.createdAt, new Date(new Date().setUTCHours(0, 0, 0, 0)))];
+    const filters = [gte(ordersTable.createdAt, new Date(new Date().setUTCHours(0, 0, 0, 0))), isNull(ordersTable.cancelledAt)];
     if (branchId) filters.push(eq(ordersTable.branchId, branchId));
     const [totals] = await db
       .select({
@@ -45,13 +47,11 @@ router.get(
       gte(paymentsTable.paidAt, new Date(new Date().setUTCHours(0, 0, 0, 0))),
     ];
     if (branchId) revenueFilters.push(eq(ordersTable.branchId, branchId));
-    const [revenue] = await db
-      .select({
-        amount: sum(paymentsTable.amountCents),
-      })
+    const [revenue] = user.role === "manager" ? await db
+      .select({ amount: sum(paymentsTable.amountCents) })
       .from(paymentsTable)
       .innerJoin(ordersTable, eq(paymentsTable.orderId, ordersTable.id))
-      .where(and(...revenueFilters));
+      .where(and(...revenueFilters)) : [];
     let branchName = "All branches";
     if (branchId) {
       const [branch] = await db
@@ -71,5 +71,49 @@ router.get(
     );
   },
 );
+
+router.get("/dashboard/financial", requireGelatoAuth, requireManager, async (req, res): Promise<void> => {
+  const parsed = GetFinancialSummaryQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid branch filter" });
+    return;
+  }
+  const branchId = parsed.data.branchId;
+  let branchName = "All branches";
+  if (branchId) {
+    const [branch] = await db.select({ name: branchesTable.name }).from(branchesTable)
+      .where(eq(branchesTable.id, branchId)).limit(1);
+    if (!branch) {
+      res.status(404).json({ error: "Branch not found" });
+      return;
+    }
+    branchName = branch.name;
+  }
+  const filters = [eq(paymentsTable.status, "paid")];
+  if (branchId) filters.push(eq(ordersTable.branchId, branchId));
+  const rows = await db.select({
+    method: paymentsTable.method,
+    paidOrders: count(paymentsTable.id),
+    revenueCents: sum(paymentsTable.amountCents),
+  }).from(paymentsTable)
+    .innerJoin(ordersTable, eq(paymentsTable.orderId, ordersTable.id))
+    .where(and(...filters))
+    .groupBy(paymentsTable.method);
+  const methods = { qr: 0, card: 0, transfer: 0 };
+  let paidOrders = 0;
+  let revenueCents = 0;
+  for (const row of rows) {
+    methods[row.method] = Number(row.revenueCents ?? 0);
+    paidOrders += row.paidOrders;
+    revenueCents += methods[row.method];
+  }
+  res.json(GetFinancialSummaryResponse.parse({
+    branchName,
+    revenueCents,
+    paidOrders,
+    averageOrderCents: paidOrders ? Math.round(revenueCents / paidOrders) : 0,
+    byMethodCents: methods,
+  }));
+});
 
 export default router;

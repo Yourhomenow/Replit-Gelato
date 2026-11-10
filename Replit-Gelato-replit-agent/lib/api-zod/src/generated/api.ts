@@ -9,6 +9,160 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List current promotions, or all promotions for managers
+ */
+export const ListPromotionsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+export const ListPromotionsResponse = zod.array(ListPromotionsResponseItem)
+
+
+/**
+ * @summary Create a promotion (manager only)
+ */
+
+export const createPromotionBodyDiscountPercentMax = 100;
+
+
+
+
+export const CreatePromotionBody = zod.object({
+  "name": zod.string().min(1),
+  "discountPercent": zod.number().int().min(1).max(createPromotionBodyDiscountPercentMax),
+  "menuItemIds": zod.array(zod.string().uuid()).min(1),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+export const CreatePromotionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Update a promotion (manager only)
+ */
+export const UpdatePromotionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const updatePromotionBodyDiscountPercentMax = 100;
+
+
+
+
+export const UpdatePromotionBody = zod.object({
+  "name": zod.string().min(1),
+  "discountPercent": zod.number().int().min(1).max(updatePromotionBodyDiscountPercentMax),
+  "menuItemIds": zod.array(zod.string().uuid()).min(1),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+export const UpdatePromotionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "discountPercent": zod.number().int(),
+  "menuItemIds": zod.array(zod.string().uuid()),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary List employees for managers
+ */
+export const ListEmployeesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+export const ListEmployeesResponse = zod.array(ListEmployeesResponseItem)
+
+
+/**
+ * @summary Create an active employee account
+ */
+export const createEmployeeBodyFullNameMin = 2;
+
+export const createEmployeeBodyPhoneMin = 8;
+
+export const createEmployeeBodyPasswordMin = 8;
+
+
+
+export const CreateEmployeeBody = zod.object({
+  "fullName": zod.string().min(createEmployeeBodyFullNameMin),
+  "phone": zod.string().min(createEmployeeBodyPhoneMin),
+  "password": zod.string().min(createEmployeeBodyPasswordMin),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid()
+})
+
+export const CreateEmployeeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Update employee details or active status
+ */
+export const UpdateEmployeeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const updateEmployeeBodyFullNameMin = 2;
+
+export const updateEmployeeBodyPhoneMin = 8;
+
+
+
+export const UpdateEmployeeBody = zod.object({
+  "fullName": zod.string().min(updateEmployeeBodyFullNameMin).optional(),
+  "phone": zod.string().min(updateEmployeeBodyPhoneMin).optional(),
+  "role": zod.enum(['staff', 'manager']).optional(),
+  "branchId": zod.string().uuid().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateEmployeeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "role": zod.enum(['staff', 'manager']),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "isActive": zod.boolean()
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -41,7 +195,7 @@ export const RegisterBody = zod.object({
   "fullName": zod.string().min(registerBodyFullNameMin),
   "phone": zod.string().min(registerBodyPhoneMin),
   "password": zod.string().min(registerBodyPasswordMin),
-  "role": zod.enum(['staff', 'manager']),
+  "role": zod.enum(['staff']),
   "branchId": zod.string().uuid()
 })
 
@@ -344,6 +498,46 @@ export const CreateStockLotResponse = zod.object({
 
 
 /**
+ * @summary Edit an existing stock lot
+ */
+export const UpdateStockLotParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const updateStockLotBodyQuantityMin = 0;
+
+
+
+
+
+export const UpdateStockLotBody = zod.object({
+  "ingredientName": zod.string().min(1),
+  "quantity": zod.number().min(updateStockLotBodyQuantityMin),
+  "unit": zod.string().min(1),
+  "importDate": zod.coerce.date(),
+  "supplier": zod.string().min(1),
+  "shelfLife": zod.coerce.date().nullable()
+})
+
+export const updateStockLotResponseQuantityMin = 0;
+
+
+
+export const UpdateStockLotResponse = zod.object({
+  "id": zod.string().uuid(),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "ingredientName": zod.string(),
+  "quantity": zod.number().min(updateStockLotResponseQuantityMin),
+  "unit": zod.string(),
+  "importDate": zod.coerce.date(),
+  "supplier": zod.string(),
+  "shelfLife": zod.coerce.date().nullable()
+})
+
+
+/**
  * @summary List recent orders
  */
 export const listOrdersQueryLimitDefault = 30;
@@ -363,6 +557,8 @@ export const ListOrdersResponseItem = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -380,6 +576,8 @@ export const ListOrdersResponseItem = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -411,6 +609,8 @@ export const CreateOrderResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -428,6 +628,8 @@ export const CreateOrderResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -451,6 +653,8 @@ export const UpdateOrderStatusResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -468,6 +672,48 @@ export const UpdateOrderStatusResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
+  "totalCents": zod.number().int()
+}))
+})
+
+
+/**
+ * @summary Cancel an unpaid order and restore its reserved inventory
+ */
+export const CancelOrderParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const CancelOrderResponse = zod.object({
+  "id": zod.string().uuid(),
+  "branchId": zod.string().uuid(),
+  "branchName": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
+  "totalCents": zod.number().int(),
+  "payment": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "method": zod.enum(['qr', 'card', 'transfer']),
+  "amountCents": zod.number().int(),
+  "status": zod.enum(['paid']),
+  "paidAt": zod.coerce.date()
+}),zod.null()]),
+  "lines": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "menuItemId": zod.string().uuid(),
+  "menuItemName": zod.string(),
+  "quantity": zod.number().int(),
+  "size": zod.enum(['small', 'regular', 'large']),
+  "flavor": zod.string(),
+  "toppings": zod.array(zod.string()),
+  "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -496,6 +742,8 @@ export const RecordPaymentResponse = zod.object({
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "status": zod.enum(['blending', 'resting', 'ready_to_serve']),
+  "cancelledAt": zod.coerce.date().nullable(),
+  "canCancel": zod.boolean(),
   "totalCents": zod.number().int(),
   "payment": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -513,6 +761,8 @@ export const RecordPaymentResponse = zod.object({
   "flavor": zod.string(),
   "toppings": zod.array(zod.string()),
   "unitPriceCents": zod.number().int(),
+  "discountCents": zod.number().int(),
+  "promotionName": zod.string().nullable(),
   "totalCents": zod.number().int()
 }))
 })
@@ -530,6 +780,26 @@ export const GetDashboardSummaryResponse = zod.object({
   "todayOrders": zod.number().int(),
   "todayRevenueCents": zod.number().int(),
   "branchName": zod.string()
+})
+
+
+/**
+ * @summary Get paid revenue summary for managers
+ */
+export const GetFinancialSummaryQueryParams = zod.object({
+  "branchId": zod.coerce.string().uuid().optional()
+})
+
+export const GetFinancialSummaryResponse = zod.object({
+  "branchName": zod.string(),
+  "revenueCents": zod.number().int(),
+  "paidOrders": zod.number().int(),
+  "averageOrderCents": zod.number().int(),
+  "byMethodCents": zod.object({
+  "qr": zod.number().int(),
+  "card": zod.number().int(),
+  "transfer": zod.number().int()
+})
 })
 
 

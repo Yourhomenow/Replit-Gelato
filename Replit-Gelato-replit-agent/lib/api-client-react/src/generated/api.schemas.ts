@@ -5,6 +5,31 @@
  * Gelato store operations for staff and managers
  * OpenAPI spec version: 0.1.0
  */
+export interface Promotion {
+  id: string;
+  name: string;
+  discountPercent: number;
+  menuItemIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+}
+
+export interface PromotionInput {
+  /** @minLength 1 */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  discountPercent: number;
+  /** @minItems 1 */
+  menuItemIds: string[];
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -16,6 +41,61 @@ export interface ErrorResponse {
 export interface Branch {
   id: string;
   name: string;
+}
+
+export type EmployeeRole = typeof EmployeeRole[keyof typeof EmployeeRole];
+
+
+export const EmployeeRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface Employee {
+  id: string;
+  fullName: string;
+  phone: string;
+  role: EmployeeRole;
+  branchId: string;
+  branchName: string;
+  isActive: boolean;
+}
+
+export type CreateEmployeeInputRole = typeof CreateEmployeeInputRole[keyof typeof CreateEmployeeInputRole];
+
+
+export const CreateEmployeeInputRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface CreateEmployeeInput {
+  /** @minLength 2 */
+  fullName: string;
+  /** @minLength 8 */
+  phone: string;
+  /** @minLength 8 */
+  password: string;
+  role: CreateEmployeeInputRole;
+  branchId: string;
+}
+
+export type UpdateEmployeeInputRole = typeof UpdateEmployeeInputRole[keyof typeof UpdateEmployeeInputRole];
+
+
+export const UpdateEmployeeInputRole = {
+  staff: 'staff',
+  manager: 'manager',
+} as const;
+
+export interface UpdateEmployeeInput {
+  /** @minLength 2 */
+  fullName?: string;
+  /** @minLength 8 */
+  phone?: string;
+  role?: UpdateEmployeeInputRole;
+  branchId?: string;
+  isActive?: boolean;
 }
 
 export type AuthUserRole = typeof AuthUserRole[keyof typeof AuthUserRole];
@@ -40,7 +120,6 @@ export type RegisterInputRole = typeof RegisterInputRole[keyof typeof RegisterIn
 
 export const RegisterInputRole = {
   staff: 'staff',
-  manager: 'manager',
 } as const;
 
 export interface RegisterInput {
@@ -156,6 +235,20 @@ export interface StockLotInput {
   shelfLife: string | null;
 }
 
+export interface StockLotUpdate {
+  /** @minLength 1 */
+  ingredientName: string;
+  /** @minimum 0 */
+  quantity: number;
+  /** @minLength 1 */
+  unit: string;
+  importDate: string;
+  /** @minLength 1 */
+  supplier: string;
+  /** @nullable */
+  shelfLife: string | null;
+}
+
 export type OrderLineInputSize = typeof OrderLineInputSize[keyof typeof OrderLineInputSize];
 
 
@@ -198,6 +291,9 @@ export interface OrderLine {
   flavor: string;
   toppings: string[];
   unitPriceCents: number;
+  discountCents: number;
+  /** @nullable */
+  promotionName: string | null;
   totalCents: number;
 }
 
@@ -241,6 +337,9 @@ export interface Order {
   createdBy: string;
   createdAt: string;
   status: OrderStatus;
+  /** @nullable */
+  cancelledAt: string | null;
+  canCancel: boolean;
   totalCents: number;
   payment: Payment | null;
   lines: OrderLine[];
@@ -281,6 +380,20 @@ export interface DashboardSummary {
   branchName: string;
 }
 
+export type FinancialSummaryByMethodCents = {
+  qr: number;
+  card: number;
+  transfer: number;
+};
+
+export interface FinancialSummary {
+  branchName: string;
+  revenueCents: number;
+  paidOrders: number;
+  averageOrderCents: number;
+  byMethodCents: FinancialSummaryByMethodCents;
+}
+
 export type ListMenuParams = {
 search?: string;
 branchId?: string;
@@ -301,6 +414,10 @@ limit?: number;
 };
 
 export type GetDashboardSummaryParams = {
+branchId?: string;
+};
+
+export type GetFinancialSummaryParams = {
 branchId?: string;
 };
 
