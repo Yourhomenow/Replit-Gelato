@@ -9,6 +9,169 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Find cities for a branch forecast location (manager only)
+ */
+export const searchForecastLocationsQueryQMin = 2;
+export const searchForecastLocationsQueryQMax = 100;
+
+export const searchForecastLocationsQueryCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+
+
+export const SearchForecastLocationsQueryParams = zod.object({
+  "q": zod.coerce.string().min(searchForecastLocationsQueryQMin).max(searchForecastLocationsQueryQMax),
+  "countryCode": zod.coerce.string().regex(searchForecastLocationsQueryCountryCodeRegExp).optional()
+})
+
+export const searchForecastLocationsResponseLocationsItemCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const searchForecastLocationsResponseLocationsItemLatitudeMin = -90;
+export const searchForecastLocationsResponseLocationsItemLatitudeMax = 90;
+
+export const searchForecastLocationsResponseLocationsItemLongitudeMin = -180;
+export const searchForecastLocationsResponseLocationsItemLongitudeMax = 180;
+
+export const searchForecastLocationsResponseLocationsMax = 8;
+
+
+
+export const SearchForecastLocationsResponse = zod.object({
+  "locations": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "region": zod.string(),
+  "country": zod.string(),
+  "countryCode": zod.string().regex(searchForecastLocationsResponseLocationsItemCountryCodeRegExp),
+  "latitude": zod.number().min(searchForecastLocationsResponseLocationsItemLatitudeMin).max(searchForecastLocationsResponseLocationsItemLatitudeMax),
+  "longitude": zod.number().min(searchForecastLocationsResponseLocationsItemLongitudeMin).max(searchForecastLocationsResponseLocationsItemLongitudeMax),
+  "timezone": zod.string()
+})).max(searchForecastLocationsResponseLocationsMax),
+  "status": zod.enum(['fresh', 'stale'])
+})
+
+
+/**
+ * @summary Save a branch location for Scoop Forecast (manager only)
+ */
+export const SaveForecastSettingsParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const saveForecastSettingsBodyLatitudeMin = -90;
+export const saveForecastSettingsBodyLatitudeMax = 90;
+
+export const saveForecastSettingsBodyLongitudeMin = -180;
+export const saveForecastSettingsBodyLongitudeMax = 180;
+
+export const saveForecastSettingsBodyCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const saveForecastSettingsBodyTimezoneMax = 100;
+
+
+
+export const SaveForecastSettingsBody = zod.object({
+  "latitude": zod.number().min(saveForecastSettingsBodyLatitudeMin).max(saveForecastSettingsBodyLatitudeMax),
+  "longitude": zod.number().min(saveForecastSettingsBodyLongitudeMin).max(saveForecastSettingsBodyLongitudeMax),
+  "countryCode": zod.string().regex(saveForecastSettingsBodyCountryCodeRegExp),
+  "timezone": zod.string().min(1).max(saveForecastSettingsBodyTimezoneMax)
+})
+
+export const saveForecastSettingsResponseLatitudeMin = -90;
+export const saveForecastSettingsResponseLatitudeMax = 90;
+
+export const saveForecastSettingsResponseLongitudeMin = -180;
+export const saveForecastSettingsResponseLongitudeMax = 180;
+
+export const saveForecastSettingsResponseCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const saveForecastSettingsResponseTimezoneMax = 100;
+
+
+
+export const SaveForecastSettingsResponse = zod.object({
+  "latitude": zod.number().min(saveForecastSettingsResponseLatitudeMin).max(saveForecastSettingsResponseLatitudeMax),
+  "longitude": zod.number().min(saveForecastSettingsResponseLongitudeMin).max(saveForecastSettingsResponseLongitudeMax),
+  "countryCode": zod.string().regex(saveForecastSettingsResponseCountryCodeRegExp),
+  "timezone": zod.string().min(1).max(saveForecastSettingsResponseTimezoneMax)
+})
+
+
+/**
+ * @summary Seven day serving outlook and tomorrow preparation gaps (manager only)
+ */
+export const GetScoopForecastQueryParams = zod.object({
+  "branchId": zod.coerce.string().uuid()
+})
+
+export const getScoopForecastResponseSettingsOneLatitudeMin = -90;
+export const getScoopForecastResponseSettingsOneLatitudeMax = 90;
+
+export const getScoopForecastResponseSettingsOneLongitudeMin = -180;
+export const getScoopForecastResponseSettingsOneLongitudeMax = 180;
+
+export const getScoopForecastResponseSettingsOneCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const getScoopForecastResponseSettingsOneTimezoneMax = 100;
+
+export const getScoopForecastResponseDaysMax = 7;
+
+export const getScoopForecastResponsePrepMax = 20;
+
+export const getScoopForecastResponseIngredientGapsMax = 20;
+
+
+
+export const GetScoopForecastResponse = zod.object({
+  "branchId": zod.string(),
+  "branchName": zod.string(),
+  "settings": zod.union([zod.object({
+  "latitude": zod.number().min(getScoopForecastResponseSettingsOneLatitudeMin).max(getScoopForecastResponseSettingsOneLatitudeMax),
+  "longitude": zod.number().min(getScoopForecastResponseSettingsOneLongitudeMin).max(getScoopForecastResponseSettingsOneLongitudeMax),
+  "countryCode": zod.string().regex(getScoopForecastResponseSettingsOneCountryCodeRegExp),
+  "timezone": zod.string().min(1).max(getScoopForecastResponseSettingsOneTimezoneMax)
+}),zod.null()]),
+  "generatedAt": zod.string(),
+  "history": zod.union([zod.object({
+  "startsOn": zod.string(),
+  "endsOn": zod.string(),
+  "calendarDays": zod.number().int(),
+  "sellingDays": zod.number().int(),
+  "totalServings": zod.number().int(),
+  "sufficient": zod.boolean()
+}),zod.null()]),
+  "weather": zod.object({
+  "status": zod.enum(['fresh', 'stale', 'unavailable', 'unsupported']),
+  "fetchedAt": zod.string().nullable()
+}),
+  "holidays": zod.object({
+  "status": zod.enum(['fresh', 'stale', 'unavailable', 'unsupported']),
+  "fetchedAt": zod.string().nullable()
+}),
+  "days": zod.array(zod.object({
+  "date": zod.string(),
+  "maxTemperatureC": zod.number().nullable(),
+  "rainProbabilityPercent": zod.number().nullable(),
+  "weatherCode": zod.number().int().nullable(),
+  "holidays": zod.array(zod.string()),
+  "adjustmentPercent": zod.number().int(),
+  "reasons": zod.array(zod.string()),
+  "expectedServings": zod.number().int().nullable()
+})).max(getScoopForecastResponseDaysMax),
+  "prep": zod.array(zod.object({
+  "menuItemId": zod.string(),
+  "name": zod.string(),
+  "targetServings": zod.number().int(),
+  "availableServings": zod.number().int(),
+  "extraServings": zod.number().int()
+})).max(getScoopForecastResponsePrepMax),
+  "prepItemCount": zod.number().int(),
+  "ingredientGaps": zod.array(zod.object({
+  "ingredientName": zod.string(),
+  "unit": zod.string(),
+  "requiredQuantity": zod.number(),
+  "availableQuantity": zod.number(),
+  "shortageQuantity": zod.number()
+})).max(getScoopForecastResponseIngredientGapsMax),
+  "ingredientGapCount": zod.number().int()
+})
+
+
+/**
  * @summary List current promotions, or all promotions for managers
  */
 export const ListPromotionsResponseItem = zod.object({

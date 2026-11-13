@@ -18,6 +18,86 @@ tags:
   - name: employees
   - name: promotions
 paths:
+  /forecast/locations:
+    get:
+      operationId: searchForecastLocations
+      tags: [dashboard]
+      summary: Find cities for a branch forecast location (manager only)
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - in: query
+          name: countryCode
+          schema: { type: string, pattern: "^[A-Z]{2}$" }
+      responses:
+        "200":
+          description: Matching cities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ForecastLocationSearch" }
+        "400":
+          description: Invalid search
+        "401":
+          description: Sign in required
+        "403":
+          description: Manager access required
+        "503":
+          description: City search unavailable
+  /branches/{id}/forecast-settings:
+    put:
+      operationId: saveForecastSettings
+      tags: [dashboard]
+      summary: Save a branch location for Scoop Forecast (manager only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ForecastSettings" }
+      responses:
+        "200":
+          description: Saved location
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ForecastSettings" }
+        "400":
+          description: Invalid location
+        "401":
+          description: Sign in required
+        "403":
+          description: Manager access required
+        "404":
+          description: Branch not found
+  /dashboard/scoop-forecast:
+    get:
+      operationId: getScoopForecast
+      tags: [dashboard]
+      summary: Seven day serving outlook and tomorrow preparation gaps (manager only)
+      parameters:
+        - in: query
+          name: branchId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Forecast, or setup state when location has not been saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScoopForecast" }
+        "400":
+          description: Invalid branch filter
+        "401":
+          description: Sign in required
+        "403":
+          description: Manager access required
+        "404":
+          description: Branch not found
   /promotions:
     get:
       operationId: listPromotions
@@ -678,6 +758,116 @@ paths:
           description: Manager access required
 components:
   schemas:
+    ForecastLocation:
+      type: object
+      required: [id, name, region, country, countryCode, latitude, longitude, timezone]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        region: { type: string }
+        country: { type: string }
+        countryCode: { type: string, pattern: "^[A-Z]{2}$" }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        timezone: { type: string }
+    ForecastLocationSearch:
+      type: object
+      required: [locations, status]
+      properties:
+        locations:
+          type: array
+          maxItems: 8
+          items: { $ref: "#/components/schemas/ForecastLocation" }
+        status: { type: string, enum: [fresh, stale] }
+    ForecastSettings:
+      type: object
+      required: [latitude, longitude, countryCode, timezone]
+      properties:
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        countryCode: { type: string, pattern: "^[A-Z]{2}$" }
+        timezone: { type: string, minLength: 1, maxLength: 100 }
+    ForecastProvider:
+      type: object
+      required: [status, fetchedAt]
+      properties:
+        status: { type: string, enum: [fresh, stale, unavailable, unsupported] }
+        fetchedAt: { type: [string, "null"] }
+    ForecastHistory:
+      type: object
+      required: [startsOn, endsOn, calendarDays, sellingDays, totalServings, sufficient]
+      properties:
+        startsOn: { type: string }
+        endsOn: { type: string }
+        calendarDays: { type: integer }
+        sellingDays: { type: integer }
+        totalServings: { type: integer }
+        sufficient: { type: boolean }
+    ForecastDay:
+      type: object
+      required: [date, maxTemperatureC, rainProbabilityPercent, weatherCode, holidays, adjustmentPercent, reasons, expectedServings]
+      properties:
+        date: { type: string }
+        maxTemperatureC: { type: [number, "null"] }
+        rainProbabilityPercent: { type: [number, "null"] }
+        weatherCode: { type: [integer, "null"] }
+        holidays:
+          type: array
+          items: { type: string }
+        adjustmentPercent: { type: integer }
+        reasons:
+          type: array
+          items: { type: string }
+        expectedServings: { type: [integer, "null"] }
+    ForecastPrepItem:
+      type: object
+      required: [menuItemId, name, targetServings, availableServings, extraServings]
+      properties:
+        menuItemId: { type: string }
+        name: { type: string }
+        targetServings: { type: integer }
+        availableServings: { type: integer }
+        extraServings: { type: integer }
+    ForecastIngredientGap:
+      type: object
+      required: [ingredientName, unit, requiredQuantity, availableQuantity, shortageQuantity]
+      properties:
+        ingredientName: { type: string }
+        unit: { type: string }
+        requiredQuantity: { type: number }
+        availableQuantity: { type: number }
+        shortageQuantity: { type: number }
+    ScoopForecast:
+      type: object
+      required: [branchId, branchName, settings, generatedAt, history, weather, holidays, days, prep, prepItemCount, ingredientGaps, ingredientGapCount]
+      properties:
+        branchId: { type: string }
+        branchName: { type: string }
+        settings:
+          anyOf:
+            - { $ref: "#/components/schemas/ForecastSettings" }
+            - { type: "null" }
+        generatedAt: { type: string }
+        history:
+          anyOf:
+            - { $ref: "#/components/schemas/ForecastHistory" }
+            - { type: "null" }
+        weather: { $ref: "#/components/schemas/ForecastProvider" }
+        holidays: { $ref: "#/components/schemas/ForecastProvider" }
+        days:
+          type: array
+          maxItems: 7
+          items: { $ref: "#/components/schemas/ForecastDay" }
+        prep:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/ForecastPrepItem" }
+        prepItemCount: { type: integer }
+        ingredientGaps:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/ForecastIngredientGap" }
+        ingredientGapCount: { type: integer }
     Promotion:
       type: object
       properties:

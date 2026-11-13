@@ -1,6 +1,7 @@
 import {
   boolean,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -38,6 +39,14 @@ export const paymentMethodEnum = pgEnum("payment_method", [
 export const branchesTable = pgTable("branches", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),
+});
+
+export const forecastSettingsTable = pgTable("gelato_forecast_settings", {
+  branchId: uuid("branch_id").primaryKey().references(() => branchesTable.id, { onDelete: "cascade" }),
+  latitude: doublePrecision("latitude").notNull(),
+  longitude: doublePrecision("longitude").notNull(),
+  countryCode: text("country_code").notNull(),
+  timezone: text("timezone").notNull(),
 });
 
 export const usersTable = pgTable(
