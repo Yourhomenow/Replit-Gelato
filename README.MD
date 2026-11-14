@@ -12,6 +12,7 @@ A branch-aware gelato shop management prototype. Staff can manage orders and pre
 - Stock lot registration, stock auditing, and low-stock warnings.
 - Order creation with customizations, preparation status tracking, and QR, card, or bank-transfer payment records.
 - Manager tools for promotions, employees, and financial summaries.
+- Scoop Forecast for managers: branch weather, national public holidays, serving suggestions, and ingredient shortages for tomorrow.
 
 This is a prototype: OTP delivery and payment processing are not connected to external providers. In development, OTP codes are logged by the API and included in the development response; production responses omit the code. Payments are recorded, not processed by a gateway.
 
@@ -58,6 +59,52 @@ pnpm run dev:web
 ```
 
 The web app is available at [http://localhost:5173](http://localhost:5173). Its development server proxies API requests to `http://127.0.0.1:3000`.
+
+## Scoop Forecast
+
+Apply the additive migration to an existing development database (new databases can use the schema push above):
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/migrations/0001-scoop-forecast.sql
+```
+
+Sign in as a manager, open **Scoop Forecast**, and select a branch. Choose a country from the dropdown to narrow city search, search for the branch's city, and choose a result. This fills its coordinates, country, and timezone automatically. The timezone dropdown lets you adjust the selection. **Enter coordinates manually** or **Adjust exact coordinates** is available for a precise location or when city search is unavailable. Save the location to apply it. Each branch has its own saved location, and managers can switch branches on mobile.
+
+The seven day outlook uses [Open-Meteo](https://open-meteo.com/) weather and national public holidays from [Nager.Date](https://date.nager.at/). Country coverage is checked at runtime; Thailand is currently absent from Nager.Date's country list. Unsupported coverage, provider outages, and stale cached responses are labeled in the page. Regional holidays are excluded.
+
+Serving targets use paid, noncancelled sales on matching weekdays over the last 28 complete branch local days, starting with the first recorded sale. Targets require at least seven complete calendar days and three selling days. Initial planning adjustments add 15% for maximum temperatures of 30°C or above, subtract 15% for rain probability of 60% or above, and add 10% for national public holidays. These are explained rules, not a trained prediction model. Missing provider data adds no adjustment.
+
+Tomorrow's ingredient check compares the full suggested mix against stock usable that day, accounting for shared ingredients. Current menu availability represents serving capacity, rather than already prepared gelato. Suggestions never change inventory or orders. Up to 20 menu targets and 20 ingredient shortages are displayed, with full counts; ingredient calculations include every target.
+
+The prototype uses Open-Meteo's public endpoint. For commercial use, obtain an [Open-Meteo commercial subscription](https://open-meteo.com/en/pricing) and set `OPEN_METEO_API_KEY` on the API server to use its customer endpoint. This secret stays on the server. No Nager.Date key is required.
+
+Run the forecast calculation and provider regression checks:
+
+```bash
+pnpm --filter @workspace/api-server test
+```
+
+With a local API running and `DATABASE_URL` and `SESSION_SECRET` exported, run database and authorization checks:
+
+```bash
+FORECAST_TEST_API_URL=http://127.0.0.1:3000/api pnpm --filter @workspace/api-server run test:integration
+```
+
+The integration script creates isolated branches, users, and sales, then removes its fixtures in a cleanup step. It calls the configured weather and holiday providers, and also accepts unavailable provider responses. It requires a local development API.
+
+## Financial report periods
+
+Managers can open **Finance** and choose **All time**, **Week**, **Month range**, or **Custom dates**, then select **Apply period**. A week runs Monday through Sunday containing the chosen date. A month range includes the full first and last months, so August through December 2026 means August 1 through December 31. Custom dates include both endpoints.
+
+The reporting timezone starts with your browser's timezone and can be changed in the dropdown. The period and timezone shown above the totals describe the applied report. Editing the form leaves those totals in place until you apply it. Switching branches keeps the selected period for comparison.
+
+Revenue, paid order count, average order, and payment method totals all use payment timestamps within the selected period. Calendar date filtering includes repeated midnight hours during daylight saving changes. Empty periods show zero totals with a message.
+
+With `DATABASE_URL` and `SESSION_SECRET` exported and a local API running, verify financial period boundaries and access controls using temporary fixtures:
+
+```bash
+FINANCE_TEST_API_URL=http://127.0.0.1:3000/api pnpm --filter @workspace/api-server run test:finance
+```
 
 ## Useful commands
 

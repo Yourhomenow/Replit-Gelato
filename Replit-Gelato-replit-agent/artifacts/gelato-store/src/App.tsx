@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Router as WouterRouter, Switch, useLocation } from 'wouter';
-import { AlertTriangle, ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, CircleDollarSign, ClipboardList, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, Users, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowRight, Check, ChevronDown, CircleAlert, CircleDollarSign, ClipboardList, CloudSun, IceCreamBowl, LayoutDashboard, LoaderCircle, LogOut, Package, Plus, Search, ShoppingBag, Sparkles, Store, Users, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { EmployeesPage } from '@/pages/employees';
 import { PromotionsPage } from '@/pages/promotions';
 import { FinancialSummaryPage } from '@/pages/financial-summary';
+import { ScoopForecastPage } from '@/pages/scoop-forecast';
 import {
   getGetCurrentUserQueryKey, getGetDashboardSummaryQueryKey, getListMenuQueryKey, getListPromotionsQueryKey,
   getListOrdersQueryKey, getListStockLotsQueryKey, useCreateMenuItem, useCreateOrder,
@@ -72,7 +73,7 @@ function Shell({ children, selectedBranchId, onBranchChange }: { children: React
     { href: '/orders', label: 'Orders', icon: ClipboardList },
     { href: '/menu', label: 'Menu', icon: IceCreamBowl },
     { href: '/stock', label: 'Stock', icon: Package },
-    ...(user.data?.role === 'manager' ? [{ href: '/employees', label: 'Employees', icon: Users }, { href: '/promotions', label: 'Promotions', icon: Sparkles }, { href: '/financial-summary', label: 'Finance', icon: CircleDollarSign }] : []),
+    ...(user.data?.role === 'manager' ? [{ href: '/scoop-forecast', label: 'Scoop Forecast', icon: CloudSun }, { href: '/employees', label: 'Employees', icon: Users }, { href: '/promotions', label: 'Promotions', icon: Sparkles }, { href: '/financial-summary', label: 'Finance', icon: CircleDollarSign }] : []),
   ];
   return <div className="app-shell">
     <aside className="sidebar">
@@ -323,7 +324,7 @@ function AppRoutes() {
   if (user.isLoading) return <div className="auth-loading" data-testid="state-auth-loading"><LoaderCircle className="spin" size={22} /><span>Opening your branch workspace…</span></div>;
   if (user.isError || !user.data) return <AuthPage />;
   const branchId = user.data.role === 'manager' ? selectedBranchId || user.data.branchId : user.data.branchId;
-  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} />{user.data.role === 'manager' && <Route path="/employees"><EmployeesPage branchId={branchId} currentUserId={user.data.id} /></Route>}{user.data.role === 'manager' && <Route path="/promotions"><PromotionsPage branchId={branchId} /></Route>}{user.data.role === 'manager' && <Route path="/financial-summary"><FinancialSummaryPage branchId={branchId} /></Route>}<Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
+  return <BranchSelectionContext.Provider value={{ branchId, setBranchId: setSelectedBranchId }}><Shell selectedBranchId={branchId} onBranchChange={setSelectedBranchId}><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/new-order" component={NewOrderPage} /><Route path="/orders" component={OrdersPage} /><Route path="/menu" component={MenuPage} /><Route path="/stock" component={StockPage} />{user.data.role === 'manager' && <Route path="/scoop-forecast"><ScoopForecastPage key={branchId} branchId={branchId} /></Route>}{user.data.role === 'manager' && <Route path="/employees"><EmployeesPage branchId={branchId} currentUserId={user.data.id} /></Route>}{user.data.role === 'manager' && <Route path="/promotions"><PromotionsPage branchId={branchId} /></Route>}{user.data.role === 'manager' && <Route path="/financial-summary"><FinancialSummaryPage branchId={branchId} /></Route>}<Route><div className="state-panel"><h2>That page isn’t here.</h2><Link href="/" className="text-link">Back to the counter <ArrowRight size={14} /></Link></div></Route></Switch></ErrorBoundary></Shell></BranchSelectionContext.Provider>;
 }
 
 function App() {

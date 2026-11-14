@@ -8,6 +8,11 @@
 import type { FinancialSummaryByMethodCents } from './financialSummaryByMethodCents';
 
 export interface FinancialSummary {
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  endDate: string | null;
+  timezone: string;
   branchName: string;
   revenueCents: number;
   paidOrders: number;

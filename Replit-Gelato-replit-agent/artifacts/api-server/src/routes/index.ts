@@ -6,6 +6,7 @@ import gelatoOrdersRouter from "./gelato-orders";
 import gelatoDashboardRouter from "./gelato-dashboard";
 import gelatoEmployeesRouter from "./gelato-employees";
 import gelatoPromotionsRouter from "./gelato-promotions";
+import gelatoForecastRouter from "./gelato-forecast";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(gelatoOrdersRouter);
 router.use(gelatoDashboardRouter);
 router.use(gelatoEmployeesRouter);
 router.use(gelatoPromotionsRouter);
+router.use(gelatoForecastRouter);
 
 export default router;

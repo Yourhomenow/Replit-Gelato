@@ -5,6 +5,134 @@
  * Gelato store operations for staff and managers
  * OpenAPI spec version: 0.1.0
  */
+export interface ForecastLocation {
+  id: number;
+  name: string;
+  region: string;
+  country: string;
+  /** @pattern ^[A-Z]{2}$ */
+  countryCode: string;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
+  timezone: string;
+}
+
+export type ForecastLocationSearchStatus = typeof ForecastLocationSearchStatus[keyof typeof ForecastLocationSearchStatus];
+
+
+export const ForecastLocationSearchStatus = {
+  fresh: 'fresh',
+  stale: 'stale',
+} as const;
+
+export interface ForecastLocationSearch {
+  /** @maxItems 8 */
+  locations: ForecastLocation[];
+  status: ForecastLocationSearchStatus;
+}
+
+export interface ForecastSettings {
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
+  /** @pattern ^[A-Z]{2}$ */
+  countryCode: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  timezone: string;
+}
+
+export type ForecastProviderStatus = typeof ForecastProviderStatus[keyof typeof ForecastProviderStatus];
+
+
+export const ForecastProviderStatus = {
+  fresh: 'fresh',
+  stale: 'stale',
+  unavailable: 'unavailable',
+  unsupported: 'unsupported',
+} as const;
+
+export interface ForecastProvider {
+  status: ForecastProviderStatus;
+  /** @nullable */
+  fetchedAt: string | null;
+}
+
+export interface ForecastHistory {
+  startsOn: string;
+  endsOn: string;
+  calendarDays: number;
+  sellingDays: number;
+  totalServings: number;
+  sufficient: boolean;
+}
+
+export interface ForecastDay {
+  date: string;
+  /** @nullable */
+  maxTemperatureC: number | null;
+  /** @nullable */
+  rainProbabilityPercent: number | null;
+  /** @nullable */
+  weatherCode: number | null;
+  holidays: string[];
+  adjustmentPercent: number;
+  reasons: string[];
+  /** @nullable */
+  expectedServings: number | null;
+}
+
+export interface ForecastPrepItem {
+  menuItemId: string;
+  name: string;
+  targetServings: number;
+  availableServings: number;
+  extraServings: number;
+}
+
+export interface ForecastIngredientGap {
+  ingredientName: string;
+  unit: string;
+  requiredQuantity: number;
+  availableQuantity: number;
+  shortageQuantity: number;
+}
+
+export interface ScoopForecast {
+  branchId: string;
+  branchName: string;
+  settings: ForecastSettings | null;
+  generatedAt: string;
+  history: ForecastHistory | null;
+  weather: ForecastProvider;
+  holidays: ForecastProvider;
+  /** @maxItems 7 */
+  days: ForecastDay[];
+  /** @maxItems 20 */
+  prep: ForecastPrepItem[];
+  prepItemCount: number;
+  /** @maxItems 20 */
+  ingredientGaps: ForecastIngredientGap[];
+  ingredientGapCount: number;
+}
+
 export interface Promotion {
   id: string;
   name: string;
@@ -387,12 +515,33 @@ export type FinancialSummaryByMethodCents = {
 };
 
 export interface FinancialSummary {
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  endDate: string | null;
+  timezone: string;
   branchName: string;
   revenueCents: number;
   paidOrders: number;
   averageOrderCents: number;
   byMethodCents: FinancialSummaryByMethodCents;
 }
+
+export type SearchForecastLocationsParams = {
+/**
+ * @minLength 2
+ * @maxLength 100
+ */
+q: string;
+/**
+ * @pattern ^[A-Z]{2}$
+ */
+countryCode?: string;
+};
+
+export type GetScoopForecastParams = {
+branchId: string;
+};
 
 export type ListMenuParams = {
 search?: string;
@@ -419,5 +568,21 @@ branchId?: string;
 
 export type GetFinancialSummaryParams = {
 branchId?: string;
+/**
+ * First included calendar date in the reporting timezone; requires endDate
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+startDate?: string;
+/**
+ * Last included calendar date in the reporting timezone; requires startDate
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+endDate?: string;
+/**
+ * IANA timezone for calendar dates; defaults to UTC
+ * @minLength 1
+ * @maxLength 100
+ */
+timezone?: string;
 };
 

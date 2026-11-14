@@ -1,4 +1,4 @@
-import { and, count, eq, gte, isNull, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, isNull, lt, sql, sum } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   GetDashboardSummaryQueryParams,
@@ -13,6 +13,7 @@ import {
   paymentsTable,
 } from "@workspace/db";
 import { canAccessBranch, requireGelatoAuth, requireManager } from "../middlewares/gelato-auth";
+import { parseFinancialPeriod } from "../lib/financial-period";
 
 const router: IRouter = Router();
 
@@ -73,9 +74,13 @@ router.get(
 );
 
 router.get("/dashboard/financial", requireGelatoAuth, requireManager, async (req, res): Promise<void> => {
+  res.set("Cache-Control", "private, no-store");
   const parsed = GetFinancialSummaryQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid branch filter" });
+  // Validate raw values too: generated coercion can turn repeated query values
+  // into strings, which must not define a financial reporting period.
+  const period = parseFinancialPeriod(req.query);
+  if (!parsed.success || !period) {
+    res.status(400).json({ error: "Select a valid date range and reporting timezone" });
     return;
   }
   const branchId = parsed.data.branchId;
@@ -91,6 +96,15 @@ router.get("/dashboard/financial", requireGelatoAuth, requireManager, async (req
   }
   const filters = [eq(paymentsTable.status, "paid")];
   if (branchId) filters.push(eq(ordersTable.branchId, branchId));
+  if (period.startDate && period.endDate) {
+    // Map each unambiguous payment instant to its local calendar date. Turning
+    // local midnight into an instant can omit a repeated midnight during DST.
+    const paymentDate = sql`(${paymentsTable.paidAt} AT TIME ZONE ${period.timezone})::date`;
+    filters.push(
+      gte(paymentDate, sql`${period.startDate}::date`),
+      lt(paymentDate, sql`(${period.endDate}::date + 1)`),
+    );
+  }
   const rows = await db.select({
     method: paymentsTable.method,
     paidOrders: count(paymentsTable.id),
@@ -108,6 +122,7 @@ router.get("/dashboard/financial", requireGelatoAuth, requireManager, async (req
     revenueCents += methods[row.method];
   }
   res.json(GetFinancialSummaryResponse.parse({
+    ...period,
     branchName,
     revenueCents,
     paidOrders,

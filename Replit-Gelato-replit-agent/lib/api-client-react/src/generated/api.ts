@@ -29,8 +29,11 @@ import type {
   Employee,
   ErrorResponse,
   FinancialSummary,
+  ForecastLocationSearch,
+  ForecastSettings,
   GetDashboardSummaryParams,
   GetFinancialSummaryParams,
+  GetScoopForecastParams,
   HealthStatus,
   ListMenuParams,
   ListOrdersParams,
@@ -46,6 +49,8 @@ import type {
   Promotion,
   PromotionInput,
   RegisterInput,
+  ScoopForecast,
+  SearchForecastLocationsParams,
   StockLot,
   StockLotInput,
   StockLotUpdate,
@@ -79,6 +84,263 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getSearchForecastLocationsUrl = (params: SearchForecastLocationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/forecast/locations?${stringifiedParams}` : `/api/forecast/locations`
+}
+
+/**
+ * @summary Find cities for a branch forecast location (manager only)
+ */
+export const searchForecastLocations = async (params: SearchForecastLocationsParams, options?: Parameters<typeof customFetch>[1]): Promise<ForecastLocationSearch> => {
+
+  return customFetch<ForecastLocationSearch>(getSearchForecastLocationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchForecastLocationsQueryKey = (params?: SearchForecastLocationsParams,) => {
+    return [
+    `/api/forecast/locations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchForecastLocationsQueryOptions = <TData = Awaited<ReturnType<typeof searchForecastLocations>>, TError = ErrorType<void>>(params: SearchForecastLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchForecastLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchForecastLocationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchForecastLocations>>> = ({ signal }) => searchForecastLocations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchForecastLocations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchForecastLocationsQueryResult = NonNullable<Awaited<ReturnType<typeof searchForecastLocations>>>
+export type SearchForecastLocationsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Find cities for a branch forecast location (manager only)
+ */
+
+export function useSearchForecastLocations<TData = Awaited<ReturnType<typeof searchForecastLocations>>, TError = ErrorType<void>>(
+ params: SearchForecastLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchForecastLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchForecastLocationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveForecastSettingsUrl = (id: string,) => {
+
+
+
+
+  return `/api/branches/${id}/forecast-settings`
+}
+
+/**
+ * @summary Save a branch location for Scoop Forecast (manager only)
+ */
+export const saveForecastSettings = async (id: string,
+    forecastSettings: ForecastSettings, options?: Parameters<typeof customFetch>[1]): Promise<ForecastSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ForecastSettings>(getSaveForecastSettingsUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(forecastSettings)
+  }
+);}
+
+
+
+
+
+export const getSaveForecastSettingsMutationKey = () => ['saveForecastSettings'] as const;
+
+export const getSaveForecastSettingsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveForecastSettings>>, TError,SaveForecastSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveForecastSettings>>, TError,SaveForecastSettingsMutationVariables, TContext> => {
+
+const mutationKey = getSaveForecastSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveForecastSettings>>, SaveForecastSettingsMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  saveForecastSettings(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveForecastSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof saveForecastSettings>>>
+    export type SaveForecastSettingsMutationBody = BodyType<ForecastSettings>
+    export type SaveForecastSettingsMutationError = ErrorType<void>
+    export type SaveForecastSettingsMutationVariables = {id: string;data: BodyType<ForecastSettings>}
+
+    /**
+ * @summary Save a branch location for Scoop Forecast (manager only)
+ */
+export const useSaveForecastSettings = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveForecastSettings>>, TError,SaveForecastSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveForecastSettings>>,
+        TError,
+        SaveForecastSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveForecastSettingsMutationOptions(options));
+    }
+
+export const getGetScoopForecastUrl = (params: GetScoopForecastParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/dashboard/scoop-forecast?${stringifiedParams}` : `/api/dashboard/scoop-forecast`
+}
+
+/**
+ * @summary Seven day serving outlook and tomorrow preparation gaps (manager only)
+ */
+export const getScoopForecast = async (params: GetScoopForecastParams, options?: Parameters<typeof customFetch>[1]): Promise<ScoopForecast> => {
+
+  return customFetch<ScoopForecast>(getGetScoopForecastUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetScoopForecastQueryKey = (params?: GetScoopForecastParams,) => {
+    return [
+    `/api/dashboard/scoop-forecast`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetScoopForecastQueryOptions = <TData = Awaited<ReturnType<typeof getScoopForecast>>, TError = ErrorType<void>>(params: GetScoopForecastParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScoopForecast>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetScoopForecastQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScoopForecast>>> = ({ signal }) => getScoopForecast(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getScoopForecast>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetScoopForecastQueryResult = NonNullable<Awaited<ReturnType<typeof getScoopForecast>>>
+export type GetScoopForecastQueryError = ErrorType<void>
+
+
+/**
+ * @summary Seven day serving outlook and tomorrow preparation gaps (manager only)
+ */
+
+export function useGetScoopForecast<TData = Awaited<ReturnType<typeof getScoopForecast>>, TError = ErrorType<void>>(
+ params: GetScoopForecastParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScoopForecast>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetScoopForecastQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListPromotionsUrl = () => {
 
@@ -2292,7 +2554,7 @@ export const getGetFinancialSummaryUrl = (params?: GetFinancialSummaryParams,) =
 }
 
 /**
- * @summary Get paid revenue summary for managers
+ * @summary Get paid revenue summary for managers over an optional inclusive date range
  */
 export const getFinancialSummary = async (params?: GetFinancialSummaryParams, options?: Parameters<typeof customFetch>[1]): Promise<FinancialSummary> => {
 
@@ -2339,7 +2601,7 @@ export type GetFinancialSummaryQueryError = ErrorType<void>
 
 
 /**
- * @summary Get paid revenue summary for managers
+ * @summary Get paid revenue summary for managers over an optional inclusive date range
  */
 
 export function useGetFinancialSummary<TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<void>>(
