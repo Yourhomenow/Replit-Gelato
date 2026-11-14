@@ -515,6 +515,11 @@ export type FinancialSummaryByMethodCents = {
 };
 
 export interface FinancialSummary {
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  endDate: string | null;
+  timezone: string;
   branchName: string;
   revenueCents: number;
   paidOrders: number;
@@ -563,5 +568,21 @@ branchId?: string;
 
 export type GetFinancialSummaryParams = {
 branchId?: string;
+/**
+ * First included calendar date in the reporting timezone; requires endDate
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+startDate?: string;
+/**
+ * Last included calendar date in the reporting timezone; requires startDate
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+endDate?: string;
+/**
+ * IANA timezone for calendar dates; defaults to UTC
+ * @minLength 1
+ * @maxLength 100
+ */
+timezone?: string;
 };
 

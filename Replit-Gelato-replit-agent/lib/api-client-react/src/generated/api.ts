@@ -2554,7 +2554,7 @@ export const getGetFinancialSummaryUrl = (params?: GetFinancialSummaryParams,) =
 }
 
 /**
- * @summary Get paid revenue summary for managers
+ * @summary Get paid revenue summary for managers over an optional inclusive date range
  */
 export const getFinancialSummary = async (params?: GetFinancialSummaryParams, options?: Parameters<typeof customFetch>[1]): Promise<FinancialSummary> => {
 
@@ -2601,7 +2601,7 @@ export type GetFinancialSummaryQueryError = ErrorType<void>
 
 
 /**
- * @summary Get paid revenue summary for managers
+ * @summary Get paid revenue summary for managers over an optional inclusive date range
  */
 
 export function useGetFinancialSummary<TData = Awaited<ReturnType<typeof getFinancialSummary>>, TError = ErrorType<void>>(

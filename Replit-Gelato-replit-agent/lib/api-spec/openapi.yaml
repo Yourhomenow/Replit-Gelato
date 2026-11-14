@@ -740,13 +740,25 @@ paths:
     get:
       operationId: getFinancialSummary
       tags: [dashboard]
-      summary: Get paid revenue summary for managers
+      summary: Get paid revenue summary for managers over an optional inclusive date range
       parameters:
         - in: query
           name: branchId
           schema:
             type: string
             format: uuid
+        - in: query
+          name: startDate
+          description: First included calendar date in the reporting timezone; requires endDate
+          schema: { type: string, pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+        - in: query
+          name: endDate
+          description: Last included calendar date in the reporting timezone; requires startDate
+          schema: { type: string, pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+        - in: query
+          name: timezone
+          description: IANA timezone for calendar dates; defaults to UTC
+          schema: { type: string, minLength: 1, maxLength: 100 }
       responses:
         "200":
           description: Financial summary
@@ -756,6 +768,12 @@ paths:
                 $ref: "#/components/schemas/FinancialSummary"
         "403":
           description: Manager access required
+        "400":
+          description: Invalid branch, dates, or timezone
+        "401":
+          description: Sign in required
+        "404":
+          description: Branch not found
 components:
   schemas:
     ForecastLocation:
@@ -1383,6 +1401,9 @@ components:
     FinancialSummary:
       type: object
       properties:
+        startDate: { type: [string, "null"] }
+        endDate: { type: [string, "null"] }
+        timezone: { type: string }
         branchName:
           type: string
         revenueCents:
@@ -1401,4 +1422,4 @@ components:
             transfer:
               type: integer
           required: [qr, card, transfer]
-      required: [branchName, revenueCents, paidOrders, averageOrderCents, byMethodCents]
+      required: [branchName, revenueCents, paidOrders, averageOrderCents, byMethodCents, startDate, endDate, timezone]

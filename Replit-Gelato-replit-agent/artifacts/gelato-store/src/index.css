@@ -822,6 +822,23 @@ label input:focus,label select:focus,label textarea:focus { border-color: #66857
 .promotion-note { color: #9b692f; font-size: 11px; }
 .menu-price small { display: block; color: hsl(var(--muted-foreground)); font-size: 11px; font-weight: 400; }
 .forecast-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.financial-filters { margin-bottom: 22px; padding: 21px; border: 1px solid hsl(var(--border)); border-radius: 11px; background: hsl(var(--card)); }
+.financial-filter-title { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 20px; }
+.financial-filter-title > svg { color: hsl(var(--primary)); margin-top: 2px; flex-shrink: 0; }
+.financial-filter-title h2 { font: 500 21px var(--app-font-serif); margin: 0; }
+.financial-filter-title p, .financial-filter-footer p { margin: 6px 0 0; font-size: 12px; line-height: 1.7; color: hsl(var(--muted-foreground)); }
+.financial-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.financial-filter-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 18px; }
+.financial-filter-footer p { margin: 0; }
+.financial-filter-footer .button { flex-shrink: 0; }
+.financial-applied-period { margin: 20px 0 15px; font-size: 12px; line-height: 1.7; color: hsl(var(--muted-foreground)); overflow-wrap: anywhere; }
+.financial-applied-period strong { color: hsl(var(--foreground)); font-weight: 600; }
+.financial-empty { padding: 13px 15px; margin-bottom: 15px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--muted)); font-size: 12px; line-height: 1.7; }
+@media (max-width: 767px) {
+  .financial-filters { padding: 17px; }
+  .financial-filter-grid { grid-template-columns: 1fr; }
+  .financial-filter-footer { align-items: stretch; flex-direction: column; gap: 12px; }
+}
 .forecast-copy { color: hsl(var(--muted-foreground)); font-size: 12px; line-height: 1.7; margin: 0 0 17px; }
 .forecast-location { margin-bottom: 22px; }
 .forecast-location small { display: block; font-weight: 400; margin-top: 6px; line-height: 1.5; }

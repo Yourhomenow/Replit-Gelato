@@ -947,13 +947,25 @@ export const GetDashboardSummaryResponse = zod.object({
 
 
 /**
- * @summary Get paid revenue summary for managers
+ * @summary Get paid revenue summary for managers over an optional inclusive date range
  */
+export const getFinancialSummaryQueryStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getFinancialSummaryQueryEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getFinancialSummaryQueryTimezoneMax = 100;
+
+
+
 export const GetFinancialSummaryQueryParams = zod.object({
-  "branchId": zod.coerce.string().uuid().optional()
+  "branchId": zod.coerce.string().uuid().optional(),
+  "startDate": zod.coerce.string().regex(getFinancialSummaryQueryStartDateRegExp).optional().describe('First included calendar date in the reporting timezone; requires endDate'),
+  "endDate": zod.coerce.string().regex(getFinancialSummaryQueryEndDateRegExp).optional().describe('Last included calendar date in the reporting timezone; requires startDate'),
+  "timezone": zod.coerce.string().min(1).max(getFinancialSummaryQueryTimezoneMax).optional().describe('IANA timezone for calendar dates; defaults to UTC')
 })
 
 export const GetFinancialSummaryResponse = zod.object({
+  "startDate": zod.string().nullable(),
+  "endDate": zod.string().nullable(),
+  "timezone": zod.string(),
   "branchName": zod.string(),
   "revenueCents": zod.number().int(),
   "paidOrders": zod.number().int(),

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/scoop-forecast.test.ts",
+    "test": "node tests/scoop-forecast.test.ts && node tests/financial-period.test.ts",
+    "test:finance": "node tests/financial-summary.integration.mjs",
     "test:integration": "node tests/forecast.integration.mjs",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",

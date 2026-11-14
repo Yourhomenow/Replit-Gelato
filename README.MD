@@ -92,6 +92,20 @@ FORECAST_TEST_API_URL=http://127.0.0.1:3000/api pnpm --filter @workspace/api-ser
 
 The integration script creates isolated branches, users, and sales, then removes its fixtures in a cleanup step. It calls the configured weather and holiday providers, and also accepts unavailable provider responses. It requires a local development API.
 
+## Financial report periods
+
+Managers can open **Finance** and choose **All time**, **Week**, **Month range**, or **Custom dates**, then select **Apply period**. A week runs Monday through Sunday containing the chosen date. A month range includes the full first and last months, so August through December 2026 means August 1 through December 31. Custom dates include both endpoints.
+
+The reporting timezone starts with your browser's timezone and can be changed in the dropdown. The period and timezone shown above the totals describe the applied report. Editing the form leaves those totals in place until you apply it. Switching branches keeps the selected period for comparison.
+
+Revenue, paid order count, average order, and payment method totals all use payment timestamps within the selected period. Calendar date filtering includes repeated midnight hours during daylight saving changes. Empty periods show zero totals with a message.
+
+With `DATABASE_URL` and `SESSION_SECRET` exported and a local API running, verify financial period boundaries and access controls using temporary fixtures:
+
+```bash
+FINANCE_TEST_API_URL=http://127.0.0.1:3000/api pnpm --filter @workspace/api-server run test:finance
+```
+
 ## Useful commands
 
 Run from `Replit-Gelato-replit-agent/`:
